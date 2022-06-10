@@ -1,0 +1,19 @@
+---
+title: "Practicum 01"
+output: html_notebook
+---
+
+Part 1-1: Create a dataframe with 4 variables. The 4 variables should be doctor_type, 
+doctor_lastname, location, AVG_Rating. 
+
+```{r}
+doctor_type <- c("PCP", "Psychiatrist", "Surgeon", "Anesthesia")
+doctor_lastname <- c("Smith", "Dame", "Jones", "Zayas")
+location <- c("MA", "ME", "NH", "VT")
+AVG_Rating <- c(7,9,8,9)
+
+medical_df <- data.frame(doctor_type, doctor_lastname, location, AVG_Rating)
+
+print(medical_df)
+```
+
