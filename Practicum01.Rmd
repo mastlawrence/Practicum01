@@ -17,3 +17,137 @@ medical_df <- data.frame(doctor_type, doctor_lastname, location, AVG_Rating)
 print(medical_df)
 ```
 
+part 1-2: Using the data frame above…
+
+Select row 1 in column 2, what was selected?
+
+1 refers to the observations associated with Dr. Smith, and column 2 refers
+to the variables which contain the lastnames for all doctors. Selecting row 1
+column 2 returns the last name "Smith". 
+
+
+Select Rows 2 through 4, what was selected?
+
+Rows 2 through 4 contain all observations associated with Drs Dame, Jones, and
+Zayas. this includes type, lastname, location, and average rating. 
+
+
+Select the last column, what was selected?
+
+Selecting the last column returns all values for the variable "AVG_Rating", which 
+is presumably the average rating of each doctor.
+
+```{r}
+#Row 1, Column 2
+print(medical_df[1,2])
+
+#Rows 2 through 4
+print(medical_df[2:4,])
+
+#Last Column
+print(medical_df[,4])
+```
+
+
+Part 1-3: Using the dataset Mtcars create a scatterplot showing the relations between any two 
+variables of your choosing. Explain why you picked those variables. Each point should also 
+be based on a color scheme of your choosing.
+
+The question that I am seeking to answer is how car weight impacts MPG rating. It is imaginable that 
+heavier cars would require more energy to move, and the increased energy need would need to come
+from an increase in fuel consumption. 
+
+It is also worth inspecting the size of the engine along with the weight of the vehicle, 
+as engine size may also be related to fuel consumption.
+
+Data is plotted with weight on the X axis and miles per gallon on the y axis. Each point is colored by
+cylinder number, which is representative of the engine size. 
+
+Before drawing conclusions, statistical analysis was performed to remove outliers. Analysis of Z-scores
+shows that there are no values three standard deviations from the mean in the data frame for either variable, so no curation of the 
+data points occurred. 
+
+Correlation analysis using the Pearson methodology returns a value of -0.8696594. This values rounds into 
+the criteria held by research science of ± 0.9, indicating a negative correlation between vehicle weight and
+mpg rating. Inspecting the coloration of the points also shows a distinct trend between mpg rating and the 
+size of the engine.
+
+```{r}
+library(tidyverse)
+
+#Plot variables with Outliers
+ggplot(data = mtcars, mapping = aes(x = wt, y = mpg, color = factor(cyl))) +
+  geom_point() + 
+  scale_x_log10() +
+  labs(
+    title = "Vehicle Weight vs. MPG Rating",
+    caption = "Source: ggplot2 mtcars Dataset") +
+  xlab("Vehicle Weight") +
+  ylab("Miles-per-Gallon (MPG)") +
+  theme_bw()
+
+#Calculate statistics
+mtcars_df <- mtcars
+
+mean_weight <- mean(mtcars_df$wt)
+sd_weight <- sd(mtcars_df$wt)
+mtcars_df$z1 <- abs((mean_weight-mtcars_df$wt)/sd_weight)
+
+mean_mpg <- mean(mtcars_df$mpg)
+sd_mpg <- sd(mtcars_df$mpg)
+mtcars_df$z2 <- abs((mean_mpg-mtcars_df$mpg)/sd_mpg)
+
+#Calculate correlation coefficient
+cor(x = mtcars$wt, y = mtcars$mpg, method = "pearson")
+```
+
+Part 1-4: Using the dataset MTcars perform a summary statistic on the dataset and calculate the 
+pearson coefficient of the correlation R picking two variables of choice. Explain why you 
+picked those variables and explain the purpose of a pearson coefficient.
+
+Analysis in part 1-3 suggests that car weight impacts mileage, but it would be an assumption to state that
+this relationship is causal. We can verify the claim that 'heavy cars have poor mileage because heavier machines
+require more energy to move" by exploring the relationship between car weight and gross horsepower. This will rule 
+out alternative explanations, such as "heavy cars have poor gas mileage because they are built inefficiently". 
+
+First, summary statistics for the entire data set are produced by the code below.
+
+Before evaluation, statistical analysis was performed to remove outliers. Analysis of Z-scores
+shows that there are no values three standard deviations from the mean in the data frame for either variable, 
+so no curation of the data points occurred before calculating the correlation coefficient. 
+
+Correlation analysis using the Pearson methodology returns a value of 0.6587479. This value indicate a non-significant, 
+positive relationship between these two variables. This value is in essence an aggregate measurement of how much each 
+data point deviates from regression line modeled during the comparison of the two variables.
+
+Overall, these results suggests that the need for higher horsepower may not necessarily be the reason that heavier cars
+tend to have lower gas mileage.
+
+```{r}
+#Summary statistics
+summary(mtcars)
+
+#Analyze data set for outliers within either variable
+mtcars_df2 <- mtcars
+mean_weight <- mean(mtcars_df2$wt)
+sd_weight <- sd(mtcars_df2$wt)
+mtcars_df2$z1 <- abs((mean_weight-mtcars_df2$wt)/sd_weight)
+
+mean_hp <- mean(mtcars_df2$hp)
+sd_hp <- sd(mtcars_df2$hp)
+mtcars_df2$z2 <- abs((mean_hp-mtcars_df2$hp)/sd_hp)
+
+summary(mtcars_df2)
+
+#Perform a pearson coefficient test
+cor(x = mtcars$wt, y = mtcars$hp, method = "pearson")
+```
+
+
+
+
+
+
+
+
+
