@@ -143,10 +143,75 @@ summary(mtcars_df2)
 cor(x = mtcars$wt, y = mtcars$hp, method = "pearson")
 ```
 
+Part 2: You are given the task of performing a comprehensive analysis of the admission statistics from 2007 to 
+2019 and summarize your findings with an accompanying narrative that explains your process-flow.
+
+part 2-1: Load the data, directly from the URL, into your R environment
+
+```{r}
+#Data is imported from Data.NY.gov 
+addiction_df <- read.csv("https://data.ny.gov/api/views/ngbt-9rwf/rows.csv?accessType=DOWNLOAD&sorting=true")
+
+```
+
+part 2-2: Evaluate the dataset to determine what data preparation steps are needed and perform them. 
+At a minimum, ensure that you discuss the distribution of the data, outliers and prepare any helpful
+summary statistics to support your analysis.
+
+- Turn age into leveled factors.
+
+```{r}
+library(lubridate)
+#Preparation of data
+addiction_clean <- addiction_df %>%
+  mutate(across(c(Age.Group, Program.Category), as.factor))
 
 
+levels(addiction_clean$Age.Group) <- c("Under 18", "18 thru 24", "25 thru 34", "35 thru 44", "45 thru 54", "55 and Older") 
+addiction_clean$Year <- as.Date(addiction_clean$Year, origin = "2007")
+#-------------------------------------------------------------------------------
 
+#Analyze Dataset - Heroin Admittance state-wide.
 
+addiction_heroin_statewide <- addiction_clean %>%
+  filter(Primary.Substance.Group == "Heroin") %>%
+  group_by(Year) %>%
+  summarise(sum(Admissions))
+
+#view(addiction_heroin)
+
+ggplot(data = addiction_heroin_statewide, mapping = aes(x = Year, y = `sum(Admissions)`, fill = Year)) +
+  geom_col() + 
+  labs(
+    title = "Heroin Admittance State-Wide",
+    Caption = "Source: OASAS Chemical Dependance Treatment Program", 
+  ) + 
+  xlab("Year") +
+  ylab("State-wide Admissions") +
+  theme_bw()
+
+#-------------------------------------------------------------------------------
+
+#Analyze Dataset - Crisis Admissions by County over timespan. 
+
+addiction_heroin_Crisis <- addiction_clean %>%
+  filter(Program.Category == "Crisis") %>%
+  group_by(Year) %>%
+  summarise(sum(Admissions))
+
+view(addiction_heroin)
+
+ggplot(data = addiction_heroin_statewide, mapping = aes(x = Year, y = `sum(Admissions)`, fill = Year)) +
+  geom_col() + 
+  labs(
+    title = "Heroin Admittance State-Wide",
+    Caption = "Source: OASAS Chemical Dependance Treatment Program", 
+  ) + 
+  xlab("Year") +
+  ylab("State-wide Admissions") +
+  theme_bw()
+
+```
 
 
 
