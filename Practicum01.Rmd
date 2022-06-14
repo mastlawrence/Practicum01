@@ -170,6 +170,8 @@ Analysis of primary substance: There is a category called 'none' with almost no 
 
 
 #Analyze admissions individually by substance. Looking at overall admissions is of course going to be skewed.
+#Filter for admissions statistics from 2020. Only should evaluate from 2007 - 2019.
+#None is under primary substance group. Maybe lets remove it as a missing value.
 ```{r}
 library(lubridate)
 #Preparation of data
@@ -319,6 +321,60 @@ ggplot(data = addiction_substance, mapping = aes(x = reorder(Primary.Substance.G
 
 ```
 
+Part 2-3: Structure the data relationally, at a minimum, you should have four tibbles or data frames as 
+follows: County, Program_category, Primary_Substance_Group, Admissions Data.
+
+Within the county data frame county, the boroughs of NYC are specified by their county code 'NY' and the borough name in parentheses in order to create a distinctive key:value relationship. 
+
+```{r}
+
+#-------------------------------------------------------------------------------
+#Create County data frame.
+
+county_code <- c("AL", "AG", "NY (Bronx)", "BM", "CA", "CY", "CH", "CM",
+                 "CN", "CL", "CO", "CR", "DE", "DU", "ER", "ES",
+                 "FR", "FU", "GE", "GR", "HE", "JE", "NY (Kings)",
+                 "LE", "LI", "MA", "MO", "MG", "NA", "NY (New York City)", "NI",
+                 "ON", "OD", "OT", "OR", "OL", "OS", "OG", "PU",
+                 "NY", "RE", "NY (Richmond)", "RO", "SL", "SA", "SC", "SH",
+                 "SY", "SE", "ST", "SU", "SV", "TI", "TO", "UL",
+                 "WR", "WS", "WA", "WE", "WY", "YA"
+                 )
+
+County.of.Program.Location <- c(addiction_clean$County.of.Program.Location)
+County.of.Program.Location <- unique(County.of.Program.Location)
+county <- data.frame(county_code, County.of.Program.Location)
+#-------------------------------------------------------------------------------
+#Create program category data frame.
+
+program_code <- c("CR", "IN", "OT", "OP", "RE", "SP")
+program_name <- unique(c(addiction_clean$Program.Category))
+
+program_category <- data.frame(program_code, program_name)
+#-------------------------------------------------------------------------------
+#Primary substance group data frame.
+substance_code <- c("A", "C", "H", "M", "O", "AO", "NA")
+substance_name <- c("Alcohol", "Cocaine incl Crack", "Heroin", "Marijuana incl Hashish", "Other Opioids", "All Others", "None")
+primary_substance_group <- data.frame(substance_code, substance_name)
+#-------------------------------------------------------------------------------
+#Admissions data restructured relationally.
+
+addiction_relational <- addiction_clean %>%
+  mutate(Primary.Substance.Group = stri_replace_all_regex(Primary.Substance.Group, 
+                                                          pattern = primary_substance_group$substance_name,
+                                                          replacement = primary_substance_group$substance_code,
+                                                          vectorize_all = FALSE)) %>%
+  
+  mutate(Program.Category = stri_replace_all_regex(Program.Category, 
+                                                          pattern = program_category$program_name,
+                                                          replacement = program_category$program_code,
+                                                          vectorize_all = FALSE)) %>%
+
+  mutate(County.of.Program.Location = stri_replace_all_regex(County.of.Program.Location, 
+                                                          pattern = county$County.of.Program.Location,
+                                                          replacement = county$county_code,
+                                                          vectorize_all = FALSE))
+```
 
 
 
