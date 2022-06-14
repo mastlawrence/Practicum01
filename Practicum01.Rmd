@@ -150,7 +150,7 @@ part 2-1: Load the data, directly from the URL, into your R environment
 
 ```{r}
 #Data is imported from Data.NY.gov 
-addiction_df <- read.csv("https://data.ny.gov/api/views/ngbt-9rwf/rows.csv?accessType=DOWNLOAD&sorting=true")
+addiction_df <- read.csv("https://data.ny.gov/api/views/ngbt-9rwf/rows.csv")
 
 ```
 
@@ -160,6 +160,16 @@ summary statistics to support your analysis.
 
 - Turn age into leveled factors.
 
+Analysis of Admissions: Inspecting the histogram of admissions shows that the data is right-skewed, also known as positively skewed. the Admissions variable was evaluated to determine whether this skew is caused by outliers or not. Analysis was repeated with outliers removed.
+
+Analysis of Year: The distribution of admissions per year was examined. Based on the summary table, overall number of clinics reporting per year stayed consistent which no major variance between years.
+
+Analysis of Service type: Across the entire dataset, the service "non-med sup chem depend op" was only used once.
+
+Analysis of primary substance: There is a category called 'none' with almost no data in it that can probably be removed.
+
+
+#Analyze admissions individually by substance. Looking at overall admissions is of course going to be skewed.
 ```{r}
 library(lubridate)
 #Preparation of data
@@ -168,48 +178,144 @@ addiction_clean <- addiction_df %>%
 
 
 levels(addiction_clean$Age.Group) <- c("Under 18", "18 thru 24", "25 thru 34", "35 thru 44", "45 thru 54", "55 and Older") 
-addiction_clean$Year <- as.Date(addiction_clean$Year, origin = "2007")
 #-------------------------------------------------------------------------------
+#Analyze Dataset - Admissions
 
-#Analyze Dataset - Heroin Admittance state-wide.
+summary(addiction_clean$Admissions)
 
-addiction_heroin_statewide <- addiction_clean %>%
-  filter(Primary.Substance.Group == "Heroin") %>%
+ggplot(data = addiction_clean, mapping = aes(x = Admissions)) +
+  geom_histogram(binwidth = 10, fill = "cadetblue") +
+  labs(
+    title = "Distribution of the Admissions statistics",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("Admissions") + 
+  ylab("Count") +
+  theme_bw()
+
+mean_admissions <- mean(addiction_clean$Admissions)
+sd_admissions <- sd(addiction_clean$Admissions)
+addiction_clean$z <- abs((mean_admissions-addiction_clean$Admissions)/sd_admissions)
+
+addiction_clean <- filter(addiction_clean, z < 3)
+
+summary(addiction_clean$Admissions)
+
+ggplot(data = addiction_clean, mapping = aes(x = Admissions)) +
+  geom_histogram(binwidth = 10, fill = "cadetblue") +
+  labs(
+    title = "Distribution of the Admissions statistics",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("Admissions") + 
+  ylab("Count") +
+  theme_bw()
+#-------------------------------------------------------------------------------
+#Analyze Dataset - Years
+
+table(addiction_clean$Year)
+
+addiction_year <- addiction_clean %>%
   group_by(Year) %>%
   summarise(sum(Admissions))
 
-#view(addiction_heroin)
-
-ggplot(data = addiction_heroin_statewide, mapping = aes(x = Year, y = `sum(Admissions)`, fill = Year)) +
-  geom_col() + 
+ggplot(data = addiction_year, mapping = aes(x = Year, y = `sum(Admissions)`)) +
+  geom_col(binwidth = 1, fill = "darkcyan") + 
   labs(
-    title = "Heroin Admittance State-Wide",
-    Caption = "Source: OASAS Chemical Dependance Treatment Program", 
-  ) + 
+    title = "Admisssions per Year",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
   xlab("Year") +
-  ylab("State-wide Admissions") +
+  ylab("Admissions per year") +
   theme_bw()
-
 #-------------------------------------------------------------------------------
+#Analyze Dataset - County.of.Program.Location
 
-#Analyze Dataset - Crisis Admissions by County over timespan. 
-
-addiction_heroin_Crisis <- addiction_clean %>%
-  filter(Program.Category == "Crisis") %>%
-  group_by(Year) %>%
+addiction_County <- addiction_clean %>%
+  group_by(County.of.Program.Location) %>%
   summarise(sum(Admissions))
 
-view(addiction_heroin)
-
-ggplot(data = addiction_heroin_statewide, mapping = aes(x = Year, y = `sum(Admissions)`, fill = Year)) +
-  geom_col() + 
+ggplot(data = addiction_County, mapping = aes(x = reorder(County.of.Program.Location, desc(`sum(Admissions)`)), y = `sum(Admissions)`)) +
+  geom_col(stat = "identity", fill = "darkcyan") + 
   labs(
-    title = "Heroin Admittance State-Wide",
-    Caption = "Source: OASAS Chemical Dependance Treatment Program", 
-  ) + 
-  xlab("Year") +
-  ylab("State-wide Admissions") +
+    title = "Admisssions per County",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("County") +
+  ylab("Admissions per County") +
+  scale_y_log10() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+#-------------------------------------------------------------------------------
+#Analyze Dataset - Program Category
+
+addiction_program <- addiction_clean %>%
+  group_by(Program.Category) %>%
+  summarise(sum(Admissions))
+
+ggplot(data = addiction_program, mapping = aes(x = reorder(Program.Category, desc(`sum(Admissions)`)), y = `sum(Admissions)`)) +
+  geom_col(stat = "identity", fill = "darkcyan") + 
+  labs(
+    title = "Admisssions per Program",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("Program") +
+  ylab("Admissions per Program") +
+  scale_y_log10() +
   theme_bw()
+#-------------------------------------------------------------------------------
+#Analyze dataset - Service type
+
+addiction_service <- addiction_clean %>%
+  group_by(Service.Type) %>%
+  summarise(sum(Admissions))
+
+ggplot(data = addiction_service, mapping = aes(x = reorder(Service.Type, desc(`sum(Admissions)`)), y = `sum(Admissions)`)) +
+  geom_col(stat = "identity", fill = "darkcyan") + 
+  labs(
+    title = "Admisssions per Service Type",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("Service Type") +
+  ylab("Admissions per Service Type") +
+  scale_y_log10() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+#-------------------------------------------------------------------------------
+#Analyze data - Age Group
+
+addiction_age <- addiction_clean %>%
+  group_by(Age.Group) %>%
+  summarise(sum(Admissions))
+
+ggplot(data = addiction_age, mapping = aes(x = reorder(Age.Group, desc(`sum(Admissions)`)), y = `sum(Admissions)`)) +
+  geom_col(stat = "identity", fill = "darkcyan") + 
+  labs(
+    title = "Admisssions by Age Group",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("Age Group") +
+  ylab("Admissions by Age Group") +
+  theme_bw()
+#-------------------------------------------------------------------------------
+#Analyze data - Primary Substance Group
+
+addiction_substance <- addiction_clean %>%
+  group_by(Primary.Substance.Group) %>%
+  summarise(sum(Admissions))
+
+ggplot(data = addiction_substance, mapping = aes(x = reorder(Primary.Substance.Group, desc(`sum(Admissions)`)), y = `sum(Admissions)`)) +
+  geom_col(stat = "identity", fill = "darkcyan") + 
+  labs(
+    title = "Admisssions by Substance",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("Primary Substance") +
+  ylab("Admissions by Substance") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+#------------------------------
+
 
 ```
 
