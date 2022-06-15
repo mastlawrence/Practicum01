@@ -176,7 +176,8 @@ Analysis of primary substance: There is a category called 'none' with almost no 
 library(lubridate)
 #Preparation of data
 addiction_clean <- addiction_df %>%
-  mutate(across(c(Age.Group, Program.Category), as.factor))
+  mutate(across(c(Age.Group, Program.Category), as.factor)) %>%
+  filter(Year <= 2019)
 
 
 levels(addiction_clean$Age.Group) <- c("Under 18", "18 thru 24", "25 thru 34", "35 thru 44", "45 thru 54", "55 and Older") 
@@ -327,7 +328,7 @@ follows: County, Program_category, Primary_Substance_Group, Admissions Data.
 Within the county data frame county, the boroughs of NYC are specified by their county code 'NY' and the borough name in parentheses in order to create a distinctive key:value relationship. 
 
 ```{r}
-
+library(stringi)
 #-------------------------------------------------------------------------------
 #Create County data frame.
 
@@ -336,7 +337,7 @@ county_code <- c("AL", "AG", "NY (Bronx)", "BM", "CA", "CY", "CH", "CM",
                  "FR", "FU", "GE", "GR", "HE", "JE", "NY (Kings)",
                  "LE", "LI", "MA", "MO", "MG", "NA", "NY (New York City)", "NI",
                  "ON", "OD", "OT", "OR", "OL", "OS", "OG", "PU",
-                 "NY", "RE", "NY (Richmond)", "RO", "SL", "SA", "SC", "SH",
+                 "NY (Queens)", "RE", "NY (Richmond)", "RO", "SL", "SA", "SC", "SH",
                  "SY", "SE", "ST", "SU", "SV", "TI", "TO", "UL",
                  "WR", "WS", "WA", "WE", "WY", "YA"
                  )
@@ -364,17 +365,84 @@ addiction_relational <- addiction_clean %>%
                                                           pattern = primary_substance_group$substance_name,
                                                           replacement = primary_substance_group$substance_code,
                                                           vectorize_all = FALSE)) %>%
+                            rename("substance_code" = Primary.Substance.Group) %>%
   
   mutate(Program.Category = stri_replace_all_regex(Program.Category, 
                                                           pattern = program_category$program_name,
                                                           replacement = program_category$program_code,
                                                           vectorize_all = FALSE)) %>%
+                            rename("program_code" = Program.Category) %>%
 
   mutate(County.of.Program.Location = stri_replace_all_regex(County.of.Program.Location, 
                                                           pattern = county$County.of.Program.Location,
                                                           replacement = county$county_code,
-                                                          vectorize_all = FALSE))
+                                                          vectorize_all = FALSE)) %>%
+                            rename("county_code" = County.of.Program.Location)
 ```
+
+
+
+part 2-4: Create a function called annualAdmissions() that derives the total number of reported 
+admissions that transpired each year, for the entire state of NY and displays the results using a line 
+chart. Annotate the chart to show the year with the highest number of admissions. Note: the year 
+should be on the x-axis and the number of admissions on the y-axis. Explain the chart
+
+#Add annotations to this graph
+```{r}
+#First assume for 2007.
+
+annualAdmissions <- function() {
+addiction_annual <- addiction_clean %>%
+  group_by(Year) %>%
+  summarise(sum(Admissions))
+
+ggplot(data = addiction_annual, mapping = aes(x = Year, y = `sum(Admissions)`)) +
+  geom_line(color = "red") +
+  scale_y_log10() +
+  labs(
+    title = "Admisssions per Year",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("Year") +
+  ylab("Admissions per year") +
+  theme_bw()
+}
+annualAdmissions()
+```
+
+
+Part 2-5: Analyze the percentage of admissions for each county and visualize the results for the top 5 
+counties using a bar chart. Explain the results. Note: ensure that you join any related dataframes/ 
+tibbles.
+
+```{r}
+addiction_county <- addiction_relational %>%
+  full_join(county, by = "county_code") %>%
+    group_by(County.of.Program.Location) %>%
+      summarise(sum(Admissions)) %>%
+        rename("county_admissions" = `sum(Admissions)`) %>%
+      mutate(percent = (county_admissions / sum(county_admissions)) * 100) %>%
+    arrange(desc(percent))
+
+addiction_county_top <- head(addiction_county, n = 5L)
+
+
+ggplot(data = addiction_county_top, mapping = aes(x = reorder(County.of.Program.Location, desc(percent)), y = percent)) + 
+  geom_bar(position = "dodge", stat = "identity", fill = "deepskyblue2") +
+  labs(
+    title = "Top 5 NY Counties for Drug Rehab Admittance, by percentage",
+    Caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("NY County") +
+  ylab("Overall % of Rehab Admissions in NY State") +
+  theme_bw()
+print(addiction_county)
+```
+
+
+
+
+
 
 
 
