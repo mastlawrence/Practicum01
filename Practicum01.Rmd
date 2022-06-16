@@ -148,6 +148,8 @@ Part 2: You are given the task of performing a comprehensive analysis of the adm
 
 part 2-1: Load the data, directly from the URL, into your R environment
 
+The code below loads the .csv file into RStudio as a data frame.
+
 ```{r}
 #Data is imported from Data.NY.gov 
 addiction_df <- read.csv("https://data.ny.gov/api/views/ngbt-9rwf/rows.csv")
@@ -160,30 +162,23 @@ summary statistics to support your analysis.
 
 - Turn age into leveled factors.
 
-Analysis of Admissions: Inspecting the histogram of admissions shows that the data is right-skewed, also known as positively skewed. the Admissions variable was evaluated to determine whether this skew is caused by outliers or not. Outlying values for admissions statistics needs to be based on a variety of factors, since they can be affected by factors such as county and the type of drug use being treated. 
-
-Analysis of Year: The distribution of admissions per year was examined. Based on the summary table, overall number of clinics reporting per year stayed consistent which no major variance between years.
-
-Analysis of Service type: Across the entire dataset, the service "non-med sup chem depend op" was only used once.
-
-Analysis of primary substance: There is a category called 'none' with almost no data in it that can probably be removed.
+Outliers of admissions data evaluated using a z-score criteria of equal to or greater than 3. The filtered outliers were evaluated in Figure 1 and it was observed that the majority of the outlying values came from urban counties within the city. Since artificial variance could occur from comparing rural low population counties to densely population urban counties, outlier analysis was re-performed with the dataset divided between counties inside and outside of NYC.
 
 
 #Analyze admissions individually by substance. Looking at overall admissions is of course going to be skewed.
 #Filter for admissions statistics from 2020. Only should evaluate from 2007 - 2019.
 #None is under primary substance group. Maybe lets remove it as a missing value.
+
 ```{r}
 library(lubridate)
 #Preparation of data
 addiction_clean <- addiction_df %>%
-  mutate(across(c(Age.Group, Program.Category), as.factor)) %>%
-  filter(Year <= 2019)
-
+  mutate(across(c(Age.Group, Program.Category, Service.Type, Primary.Substance.Group), as.factor)) %>%
+  filter(Year <= 2019) %>%
+  mutate(Year = as.Date(paste(Year, 1, 1, sep = "-")))
 
 levels(addiction_clean$Age.Group) <- c("Under 18", "18 thru 24", "25 thru 34", "35 thru 44", "45 thru 54", "55 and Older") 
 #-------------------------------------------------------------------------------
-#Analyze Dataset - Admissions
-
 summary(addiction_clean$Admissions)
 
 ggplot(data = addiction_clean, mapping = aes(x = Admissions)) +
@@ -199,7 +194,7 @@ ggplot(data = addiction_clean, mapping = aes(x = Admissions)) +
 mean_admissions <- mean(addiction_clean$Admissions)
 sd_admissions <- sd(addiction_clean$Admissions)
 addiction_clean$z <- abs((mean_admissions-addiction_clean$Admissions)/sd_admissions)
-
+addiction_outlier <- filter(addiction_clean, z >= 3)
 addiction_clean <- filter(addiction_clean, z < 3)
 
 summary(addiction_clean$Admissions)
@@ -214,118 +209,41 @@ ggplot(data = addiction_clean, mapping = aes(x = Admissions)) +
   ylab("Count") +
   theme_bw()
 #-------------------------------------------------------------------------------
-#Analyze Dataset - Years
+#Evaluation of Outliers
+summary(addiction_outlier)
 
-table(addiction_clean$Year)
-
-addiction_year <- addiction_clean %>%
-  group_by(Year) %>%
-  summarise(sum(Admissions))
-
-ggplot(data = addiction_year, mapping = aes(x = Year, y = `sum(Admissions)`)) +
-  geom_col(binwidth = 1, fill = "darkcyan") + 
-  labs(
-    title = "Admisssions per Year",
-    caption = "Source: OASAS Chemical Dependance Treatment Program"
-  ) +
-  xlab("Year") +
-  ylab("Admissions per year") +
-  theme_bw()
-#-------------------------------------------------------------------------------
-#Analyze Dataset - County.of.Program.Location
-
-addiction_County <- addiction_clean %>%
+addiction_outlier_county <- addiction_outlier %>%
   group_by(County.of.Program.Location) %>%
-  summarise(sum(Admissions))
+  summarise(sum(Admissions)) %>%
+  rename("Admissions" = `sum(Admissions)`)
 
-ggplot(data = addiction_County, mapping = aes(x = reorder(County.of.Program.Location, desc(`sum(Admissions)`)), y = `sum(Admissions)`)) +
-  geom_col(stat = "identity", fill = "darkcyan") + 
+ggplot(data = addiction_outlier_county, mapping = aes(x = reorder(County.of.Program.Location, desc(Admissions)), y = Admissions)) + 
+  geom_bar(stat = "identity") +
   labs(
-    title = "Admisssions per County",
-    caption = "Source: OASAS Chemical Dependance Treatment Program"
+    title = "Figure 1: Outlying admissions values by County"
   ) +
-  xlab("County") +
-  ylab("Admissions per County") +
-  scale_y_log10() +
-  theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 #-------------------------------------------------------------------------------
-#Analyze Dataset - Program Category
 
-addiction_program <- addiction_clean %>%
-  group_by(Program.Category) %>%
-  summarise(sum(Admissions))
-
-ggplot(data = addiction_program, mapping = aes(x = reorder(Program.Category, desc(`sum(Admissions)`)), y = `sum(Admissions)`)) +
-  geom_col(stat = "identity", fill = "darkcyan") + 
-  labs(
-    title = "Admisssions per Program",
-    caption = "Source: OASAS Chemical Dependance Treatment Program"
-  ) +
-  xlab("Program") +
-  ylab("Admissions per Program") +
-  scale_y_log10() +
-  theme_bw()
-#-------------------------------------------------------------------------------
-#Analyze dataset - Service type
-
-addiction_service <- addiction_clean %>%
-  group_by(Service.Type) %>%
-  summarise(sum(Admissions))
-
-ggplot(data = addiction_service, mapping = aes(x = reorder(Service.Type, desc(`sum(Admissions)`)), y = `sum(Admissions)`)) +
-  geom_col(stat = "identity", fill = "darkcyan") + 
-  labs(
-    title = "Admisssions per Service Type",
-    caption = "Source: OASAS Chemical Dependance Treatment Program"
-  ) +
-  xlab("Service Type") +
-  ylab("Admissions per Service Type") +
-  scale_y_log10() +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-#-------------------------------------------------------------------------------
-#Analyze data - Age Group
-
-addiction_age <- addiction_clean %>%
-  group_by(Age.Group) %>%
-  summarise(sum(Admissions))
-
-ggplot(data = addiction_age, mapping = aes(x = reorder(Age.Group, desc(`sum(Admissions)`)), y = `sum(Admissions)`)) +
-  geom_col(stat = "identity", fill = "darkcyan") + 
-  labs(
-    title = "Admisssions by Age Group",
-    caption = "Source: OASAS Chemical Dependance Treatment Program"
-  ) +
-  xlab("Age Group") +
-  ylab("Admissions by Age Group") +
-  theme_bw()
-#-------------------------------------------------------------------------------
-#Analyze data - Primary Substance Group
-
-addiction_substance <- addiction_clean %>%
+addiction_outlier_substance <- addiction_outlier %>%
   group_by(Primary.Substance.Group) %>%
-  summarise(sum(Admissions))
+  summarise(sum(Admissions)) %>%
+  rename("Admissions" = `sum(Admissions)`)
 
-ggplot(data = addiction_substance, mapping = aes(x = reorder(Primary.Substance.Group, desc(`sum(Admissions)`)), y = `sum(Admissions)`)) +
-  geom_col(stat = "identity", fill = "darkcyan") + 
+ggplot(data = addiction_outlier_substance, mapping = aes(x = reorder(Primary.Substance.Group, desc(Admissions)), y = Admissions)) + 
+  geom_bar(stat = "identity") +
   labs(
-    title = "Admisssions by Substance",
-    caption = "Source: OASAS Chemical Dependance Treatment Program"
+    title = "Figure 1: Outlying admissions values by Substance"
   ) +
-  xlab("Primary Substance") +
-  ylab("Admissions by Substance") +
-  theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-#------------------------------
-
-
 ```
 
 Part 2-3: Structure the data relationally, at a minimum, you should have four tibbles or data frames as 
 follows: County, Program_category, Primary_Substance_Group, Admissions Data.
 
-Within the county data frame county, the boroughs of NYC are specified by their county code 'NY' and the borough name in parentheses in order to create a distinctive key:value relationship. 
+Within the county data frame county, the boroughs of NYC are specified by their county code 'NY' and the borough name in parentheses in order to create a distinctive key:value relationship. County codes and names are associated as a data frame, as well as program codes and names. These two data frames essentially serve as primary key dictionaries for the altered dataset to use. 
+
+The dataset is restructured through use of these primary keys, by using the key-value relationship in these newly defined data frames as patterns for replacement in the cleaned data frame. By using this technique, county names were able to be replaced with county codes, program names with program codes, and substance names with substance codes. With these codes in place, relational connections can be established and it large environments of multiple data frames can be constructed.
 
 ```{r}
 library(stringi)
@@ -493,9 +411,3 @@ ggplot(data = addiction_stats, mapping = aes(x = Primary.Substance.Group, y = `s
   theme(axis.text.x.bottom = element_text(size = 7))
   #(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
-
-
-
-
-
-
