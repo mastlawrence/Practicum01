@@ -160,7 +160,7 @@ summary statistics to support your analysis.
 
 - Turn age into leveled factors.
 
-Analysis of Admissions: Inspecting the histogram of admissions shows that the data is right-skewed, also known as positively skewed. the Admissions variable was evaluated to determine whether this skew is caused by outliers or not. Analysis was repeated with outliers removed.
+Analysis of Admissions: Inspecting the histogram of admissions shows that the data is right-skewed, also known as positively skewed. the Admissions variable was evaluated to determine whether this skew is caused by outliers or not. Outlying values for admissions statistics needs to be based on a variety of factors, since they can be affected by factors such as county and the type of drug use being treated. 
 
 Analysis of Year: The distribution of admissions per year was examined. Based on the summary table, overall number of clinics reporting per year stayed consistent which no major variance between years.
 
@@ -440,6 +440,59 @@ print(addiction_county)
 ```
 
 
+Part 2-6: Filter the data, using a regular expression, and extract all admissions to the various “Rehab” 
+facilities; i.e. your regex should match all facilities that include the word rehab, rehabilitation, etc. 
+Using the filtered data, identify which substance is the most prominent among each age group. 
+Visualize and explain the results
+
+The cleaned dataset below is filtered for keywords regarding rehabilitation clinics. Data is grouped by age group and substance used. Admissions data regarding each substance for each age grouped was summed and the highest represented substance per age group was extracted and plotted below. 
+
+The overall trend observed is that younger people most commonly enter rehabilitation clinics for substance abuse treament regarding heroin, while older individuals commonly enter rehabilitation clinics for alcohol abuse treatment. Since this data was collected in NYC, there could be potential bias in that alcohol is more freely available to some age groups versus others. This can be seen in Figure 2, which displays the use of each substance by age group. Alcohol abuse rates among those 18 and under are low when compared to Marijuana and Heroin, and then abuse rates sharply rise in the age group where alcohol becomes legal to purchase.
+
+the high heroin rates among young people may also be a product of some natural bias. Examining the age breakdown of each substance in Figure 2 shows that heroin abuse seems to peak at age 18-24 and sharply decline with age. Heroin is a notoriously dangerous drug which can easily and quickly trigger lethal health events. It is possible that abuse statistics regarding the drug are skewed in this manner due to the abuser dying before treatment can be received.
+
+```{r}
+addiction_filter <- addiction_clean %>%
+  filter(str_detect(Service.Type, "Rehab|Rehabilitation|Rehab$")) %>%
+    group_by(Age.Group, Primary.Substance.Group) %>%
+      summarise(sum(Admissions)) %>%
+        summarise(max(`sum(Admissions)`), across()) %>%
+          rename("max_admissions" = `max(\`sum(Admissions)\`)`) %>%
+      rename("Admissions" = `sum(Admissions)`) %>%
+    filter(max_admissions == Admissions) %>%
+  select(-max_admissions)
+
+print(addiction_filter)
+
+addiction_stats <- addiction_clean %>%
+  filter(str_detect(Service.Type, "Rehab|Rehabilitation|Rehab$")) %>%
+    group_by(Age.Group, Primary.Substance.Group) %>%
+      summarise(sum(Admissions))
+
+#-------------------------------------------------------------------------------
+
+ggplot(data = addiction_filter, mapping = aes(x = Age.Group, y = Admissions, fill = Primary.Substance.Group)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Figure 1: Most Commonly Abused Substance per Age Group by Admittance",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("Age Group") +
+  ylab("Rehab Clinic Admittance") +
+  theme_bw()
+
+ggplot(data = addiction_stats, mapping = aes(x = Primary.Substance.Group, y = `sum(Admissions)`, fill = Age.Group)) +
+  geom_bar(position = "dodge", stat = "Identity") +
+  labs(
+    title = "Figure 2: Abuse rate of substances per Age Group",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("Age Group") +
+  ylab("Rehab Clinic Admittance") +
+  theme_bw() +
+  theme(axis.text.x.bottom = element_text(size = 7))
+  #(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
 
 
 
