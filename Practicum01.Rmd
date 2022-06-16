@@ -162,7 +162,7 @@ summary statistics to support your analysis.
 
 - Turn age into leveled factors.
 
-Outliers of admissions data evaluated using a z-score criteria of equal to or greater than 3. The filtered outliers were evaluated in Figure 1 and it was observed that the majority of the outlying values came from urban counties within the city. Since artificial variance could occur from comparing rural low population counties to densely population urban counties, outlier analysis was re-performed with the dataset divided between counties inside and outside of NYC.
+Outliers of admissions data evaluated using a z-score criteria of equal to or greater than 3. The filtered outliers were evaluated in Figure 1 and it was observed that the majority of the outlying values came from urban counties within the city. Since artificial variance could occur from comparing rural low population counties to densely population urban counties, outlier analysis was re-performed with the dataset divided between counties inside and outside of NYC. Since there is no objective measurement of population per county available 
 
 
 #Analyze admissions individually by substance. Looking at overall admissions is of course going to be skewed.
@@ -208,34 +208,7 @@ ggplot(data = addiction_clean, mapping = aes(x = Admissions)) +
   xlab("Admissions") + 
   ylab("Count") +
   theme_bw()
-#-------------------------------------------------------------------------------
-#Evaluation of Outliers
-summary(addiction_outlier)
 
-addiction_outlier_county <- addiction_outlier %>%
-  group_by(County.of.Program.Location) %>%
-  summarise(sum(Admissions)) %>%
-  rename("Admissions" = `sum(Admissions)`)
-
-ggplot(data = addiction_outlier_county, mapping = aes(x = reorder(County.of.Program.Location, desc(Admissions)), y = Admissions)) + 
-  geom_bar(stat = "identity") +
-  labs(
-    title = "Figure 1: Outlying admissions values by County"
-  ) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-#-------------------------------------------------------------------------------
-
-addiction_outlier_substance <- addiction_outlier %>%
-  group_by(Primary.Substance.Group) %>%
-  summarise(sum(Admissions)) %>%
-  rename("Admissions" = `sum(Admissions)`)
-
-ggplot(data = addiction_outlier_substance, mapping = aes(x = reorder(Primary.Substance.Group, desc(Admissions)), y = Admissions)) + 
-  geom_bar(stat = "identity") +
-  labs(
-    title = "Figure 1: Outlying admissions values by Substance"
-  ) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
 Part 2-3: Structure the data relationally, at a minimum, you should have four tibbles or data frames as 
@@ -305,6 +278,12 @@ admissions that transpired each year, for the entire state of NY and displays th
 chart. Annotate the chart to show the year with the highest number of admissions. Note: the year 
 should be on the x-axis and the number of admissions on the y-axis. Explain the chart
 
+Figure 1 below demonstrates the total admittance to the OASAS Chemical Dependence Treatment Program per year between the years 2007-2019. The first notable rise in treatment center admittance was observed in 2008, which coincides with a US economic recession which specifically targeted the housing market. Examining the breakdown of admittance by county in 2008, rural counties where housing is owned rather than rented such as Albany showed overall admittance on-par with densely populated urban counties within NYC as portions of the population invested in real estate found themselves in poverty. Hard economic conditions are known to promote drug abuse, so the peak in 2008 can be considered consistent.
+
+The most significant increase in admittance can be observed in 2016, where the total number sharply increases. 2016 is commonly known as the start of the 3rd wave of the opioid epidemic, when the re-emergence of synthetic opioids such as Fentanyl led many users to turn to heroin as a cheaper and more available option. The impact of this can be found in Figure 3, which shows a breakdown of abuse by substance for the year 2016. In this figure, it can be seen that the most common substance that a patient sought treatment for was heroin in 2016.
+
+
+
 #Add annotations to this graph
 ```{r}
 #First assume for 2007.
@@ -318,14 +297,54 @@ ggplot(data = addiction_annual, mapping = aes(x = Year, y = `sum(Admissions)`)) 
   geom_line(color = "red") +
   scale_y_log10() +
   labs(
-    title = "Admisssions per Year",
+    title = "Figure 1: Admisssions per Year",
     caption = "Source: OASAS Chemical Dependance Treatment Program"
   ) +
   xlab("Year") +
   ylab("Admissions per year") +
+  annotate(geom="text", x=as.Date("2008-01-01"), y=191000,
+           label="Economic Recession") +
+   annotate(geom="text", x=as.Date("2016-01-01"), y=195000,
+           label="Resurgance of Synthetic Opioids") +
   theme_bw()
 }
 annualAdmissions()
+#-------------------------------------------------------------------------------
+#2008 Recession
+recession_admissions <- addiction_clean %>%
+  filter(Year == "2008-01-01") %>%
+  group_by(County.of.Program.Location) %>%
+  summarise(sum(Admissions))
+
+ggplot(data = recession_admissions, mapping = aes(reorder(x = County.of.Program.Location, desc(`sum(Admissions)`)), y = `sum(Admissions)`, fill = `sum(Admissions)`)) +
+  geom_bar(stat = "identity") +
+  scale_y_log10() +
+  labs(
+    title = "Figure 2: Admisssions per County in 2008",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("County") +
+  ylab("Admissions per year") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+#-------------------------------------------------------------------------------
+#2016 Opioid Epidemic
+substance_admissions <- addiction_clean %>%
+  filter(Year == "2016-01-01") %>%
+  group_by(Primary.Substance.Group) %>%
+  summarise(sum(Admissions))
+
+ggplot(data = substance_admissions, mapping = aes(reorder(x = Primary.Substance.Group, desc(`sum(Admissions)`)), y = `sum(Admissions)`, fill = "dodgerblue")) +
+geom_bar(stat = "identity") +
+   labs(
+    title = "Figure 3: Admisssions per Substance in 2016",
+    caption = "Source: OASAS Chemical Dependance Treatment Program"
+  ) +
+  xlab("Primary Substance Group") +
+  ylab("Admissions per Substance in 2016") +
+  theme_bw() +
+  theme(axis.text.x.bottom = element_text(size = 7))
+  #theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
 
