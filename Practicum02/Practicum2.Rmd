@@ -7,7 +7,7 @@ Question 1: Complete the following queries using the customers, orders, and Rout
 data. You should submit your queries and output in a word document. You will 
 also be graded on creativity and complexity.
 
-Question 1-1: Import the data into SQlite by creating 3 tables to host the data (10 points)
+Question 1: Import the data into SQlite by creating 3 tables to host the data (10 points)
 
 All code ran using the SQLite3 command line interface. Each tables was imported using the code listed below. 
 For organization and access, each table was added to the database "CustomerDatabase.db". 
@@ -63,7 +63,7 @@ SELECT COUNT(*) FROM Routers
 
 
 
-Question 1-2: Explore the data, what do you see and how would you connect all 3 of these
+Question 2: Explore the data, what do you see and how would you connect all 3 of these
 tables? (2.5 points)
 
 Work performed in R using RSQLite
@@ -118,14 +118,14 @@ sqlCmd4 <- "SELECT *
             FROM (SELECT Customers.*, Orders.*, Routers.*
 	                FROM Customers
 	                JOIN Orders on Orders.CustomerID = Customers.CustomerID
-	                JOIN Routers on Routers.CustomerID = Customers.CustomerID)"
+	                JOIN Routers on Routers.CustomerID = Customers.CustomerID);"
 
 tableJoin <- dbGetQuery(db, sqlCmd4)
 print(tableJoin)
 ```
 
 
-Question 1-3: Create a query using Select, where, from on a table of your using (2.5 points)
+Question 3: Create a query using Select, where, from on a table of your using (2.5 points)
 
 Below is an example query which searches the table "Customers" for customers with the first name 'Jake'. The query 
 returns all information related to customers with the first name Jake that is contained within the Customers table.
@@ -133,13 +133,13 @@ returns all information related to customers with the first name Jake that is co
 ```{r}
 sqlCmd5 <- "SELECT *
             FROM Customers
-            WHERE Customers.FirstName == 'Jake'"
+            WHERE Customers.FirstName == 'Jake';"
 
 firstNameSearch <- dbGetQuery(db, sqlCmd5)
 print(firstNameSearch)
 ```
 
-Question 1-4: Create a query that joins the tables (5 points)
+Question 4: Create a query that joins the tables (5 points)
 
 Below is a query that uses the primary keys CustomerID, OrderID, and RMAID to join all three tables within the database. 
 
@@ -148,13 +148,13 @@ sqlCmd6 <- "SELECT *
             FROM (SELECT Customers.*, Orders.*, Routers.*
 	                FROM Customers
 	                JOIN Orders on Orders.CustomerID = Customers.CustomerID
-	                JOIN Routers on Routers.CustomerID = Customers.CustomerID)"
+	                JOIN Routers on Routers.CustomerID = Customers.CustomerID);"
 
 tableJoin <- dbGetQuery(db, sqlCmd6)
 print(tableJoin)
 ```
 
-Question 1-5: Create a left join query (0 points)
+Question 5: Create a left join query (0 points)
 
 ```{r}
 sqlCmd7 <- "SELECT *
@@ -165,13 +165,61 @@ leftJoin <- dbGetQuery(db, sqlCmd7)
 print(leftJoin)
 ```
 
+Question 6: Create a query that uses the joined data from question 2 and includes Group BY,
+HAVING, Order By (5 points)
+
+The command below joins all tables using a subquery, and uses the SUM function to sum the purchases_total. 
+The summed total_puchases column is named under the alias "Summed_Purchases" data is summarized by state using the GROUP BY State query. A filter command to remove states where summed purchases are less than 25 is applied to the value produced by the GROUP BY function using the HAVING command below. The remaining states are ordered by summed_purchases using the ORDER BY command.
+
+```{r}
+sqlCmd8 <- "SELECT State, ZipeCode, SUM(Purchases_Total) AS Summed_Purchases
+            FROM (SELECT Customers.*, Orders.*, Routers.*
+	                FROM Customers
+	                JOIN Orders on Orders.CustomerID = Customers.CustomerID
+	                JOIN Routers on Routers.CustomerID = Customers.CustomerID)
+					  GROUP BY State
+					  HAVING Summed_Purchases >= 25
+					  ORDER BY Summed_Purchases DESC;"
+
+havingCmd <- dbGetQuery(db, sqlCmd8)
+print(havingCmd)
+
+```
+
+Question 7: Create a query that counts and distinctly counts (5 points)
+
+The command below displays the number of states and the number of distinct states that are available
+within the Customers table. in the column "States", we see a high value because multiples calls in a single
+state were made and considered, whereas in the "Distinct_States" column a count was only generated for the first
+time that a new state was encountered. This also confirms that purchases were made in all 50 US states.
 
 
+```{r}
+sqlCmd9 <- "SELECT COUNT(State) AS States, COUNT(DISTINCT(State)) AS Distinct_States
+            FROM Customers;"
 
+distinctCmd <- dbGetQuery(db, sqlCmd9)
+print(distinctCmd)
+```
 
+Question 8: Create a query that finds the MIN, MAX, Sum, order by desc (5 points)
 
+```{r}
+sqlCmd10 <- "SELECT State, MIN(Purchases_Total) AS Min_Purchase, 
+                           MAX(Purchases_Total) AS Max_Purchase, 
+                           SUM(Purchases_Total) AS Summed_Purchase
+             FROM Customers
+             GROUP BY State 
+             ORDER BY SUM(Purchases_Total) DESC;"
 
+sumCmd <- dbGetQuery(db, sqlCmd10)
+print(sumCmd)
+```
 
+Question 9: Create a query that uses Between, and, <, > (5 points)
 
+```{r}
+
+```
 
 
