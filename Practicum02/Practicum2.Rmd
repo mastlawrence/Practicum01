@@ -183,7 +183,6 @@ sqlCmd8 <- "SELECT State, ZipeCode, SUM(Purchases_Total) AS Summed_Purchases
 
 havingCmd <- dbGetQuery(db, sqlCmd8)
 print(havingCmd)
-
 ```
 
 Question 7: Create a query that counts and distinctly counts (5 points)
@@ -219,7 +218,42 @@ print(sumCmd)
 Question 9: Create a query that uses Between, and, <, > (5 points)
 
 ```{r}
+sqlCmd11 <- "SELECT *
+           FROM Orders
+           WHERE Year_Purchase BETWEEN 2018 AND 2021 
+           AND Cost > 10 AND Cost < 300;"
 
+betweenCmd <- dbGetQuery(db, sqlCmd11)
+print(betweenCmd)
 ```
+
+Question 10: Create a query that uses a wildcard, a join, and a group by clause (5 points)
+
+```{r}
+sqlCmd12 <- "SELECT State, Purchases_Total, SKU, 
+             SUM(Purchases_Total) AS Summed_Purchases
+             FROM (SELECT Customers.*, Orders.*
+	                 FROM Customers
+	                 JOIN Orders on Orders.CustomerID = Customers.CustomerID)
+             WHERE State LIKE '%Virginia%'
+             GROUP BY State;"
+
+wildcardCmd <- dbGetQuery(db, sqlCmd12)
+print(wildcardCmd)
+```
+
+Question 11: Create a query that finds the average and uses one of the following AND, OR, NOT (5
+points)
+
+```{r}
+sqlCmd13 <- "SELECT State, Purchases_Total, AVG(Purchases_Total) AS Average_Purchase
+             FROM Customers
+             WHERE State = 'Virginia' OR state = 'North Carolina'
+             GROUP BY State;"
+
+averageCmd <- dbGetQuery(db, sqlCmd13)
+print(averageCmd)
+```
+
 
 
