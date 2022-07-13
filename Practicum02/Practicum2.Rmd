@@ -256,4 +256,96 @@ print(averageCmd)
 ```
 
 
+Part 2: Complete the following queries using the HIV_info and country_info data. You 
+should submit your queries and output in a word document. You will also be 
+graded on creativity and complexity. You will need to create the tables and 
+import the data before you can complete the queries 
+
+
+Question 1: Look at both data sets what do you observe? How would you join the data? (5
+points)
+
+#Will discuss this one with Teena. 
+The first point of interest are the NULL values apparent in the country_info dataset.
+
+The second point of interest surfaces after performing a double inner join of the data.
+The join was set up during creation of the table, where the column name "Entity" in HIV_Info
+was altered to match the "Country" column in Country_Info using the SQLite command ALTER TABLE and
+RENAME COLUMN to change "Entity" to "Country". 
+
+The double inner join of the data was performed by using both the Country and Year column to create
+a surrogate 'primary key' to match up the data in the two tables.
+
+The third point of interest arises with the comparison of the columns "number_of_people_living_with_HIV"
+and "number_of_people_infected_with_HIV". In the first column, there is a formatting error where two different
+conventions of representing large numbers are mixed up. If this data were presented to an American
+audience, the first column value for Bermuda in 2007 should read "92.076", and the second column is a rounded version
+of the first column based on this convention. Due to this, the first column will be dropped for the sake of 
+clarity and to remove redundancy.
+
+A fourth point of interest is that although the .csv file specifies country data, it includes North America which is 
+a continent. North American HIV values in the table HIV_Info seem to be summed values from Bermuda, Canada, and the 
+United States per year.
+
+
+```{r}
+db <- dbConnect(SQLite(), 
+                dbname = "C:/Users/mastl/Documents/DA5020/sqlite-tools-win32-x86-3380500/HIV_Info.db")
+
+sqlCmd14 <- "SELECT *
+             FROM HIV_Info
+             INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country
+             AND Country_Info.Year = HIV_Info.Year;"
+
+data_explore1 <- dbGetQuery(db, sqlCmd14)
+print(data_explore1)
+```
+
+Question 2: Select the Country, Year, new_cases_of_hiv_infection, and
+School_enrollment_rate then join the data hiv_info to the country_info table
+on Entity/Country and year for only North America (10 points)
+
+```{r}
+sqlCmd15 <- "SELECT HIV_Info.Country, HIV_Info.Year, HIV_Info.new_cases_of_hiv_infection, Country_Info.Country_Population,
+             Country_Info.GDP_per_capital, Country_Info.unemployment_rate, Country_Info.School_enrollment_rate
+             FROM HIV_Info
+             INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country 
+             AND Country_Info.Year = HIV_Info.Year
+             WHERE HIV_Info.Country = 'North America'"
+
+hivCountryJoin <- dbGetQuery(db, sqlCmd15)
+print(hivCountryJoin)
+```
+
+
+Question 3: Select columns Country, Year, Country_Population and get the percentage of
+people living with HIV and percentage of deaths from HIV then join the data
+hiv_info to the country_info table on Entity/Country and year for only North
+America (10 points)
+
+#this will work once we alter the data type of number_of_people_living_with_HIV
+```{r}
+sqlCmd16 <- "SELECT Country_Info.Country, Country_Info.Year, Country_Info.Country_Population, HIV_Info.*, 
+             (HIV_Info.number_of_people_infected_with_hiv/Country_Info.Country_Population) AS percentage
+             FROM Country_Info
+             INNER JOIN HIV_Info ON HIV_Info.Country = Country_Info.Country
+             AND HIV_Info.Year = Country_Info.Year"
+
+hivPercentage <- dbGetQuery(db, sqlCmd16)
+print(hivPercentage)
+```
+
+
+Question 4: Select columns Country and get the SUM of the
+number_of_people_living_with_HIV divided by Country_Population then join
+the data hiv_info to the country_info table on Entity/Country and year not in
+North America (10 point)
+
+
+
+
+
+
+
+
 
