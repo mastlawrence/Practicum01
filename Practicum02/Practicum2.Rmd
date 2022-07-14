@@ -469,9 +469,28 @@ number_of_people_living_with_HIV divided by Country_Population then join
 the data hiv_info to the country_info table on Entity/Country and year not in
 North America (10 point)
 
+```{r}
+sqlCmd23 <- "SELECT HIV_Info.Country, HIV_Info.Year, CAST(((SUM(REPLACE(HIV_Info.number_of_people_living_with_HIV, ',', '')/1000))) AS                     REAL)/Country_Info.Country_Population
+             FROM HIV_Info
+             INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country 
+                        AND Country_Info.Year = HIV_Info.Year
+             WHERE HIV_Info.Country IS NOT 'North America'
+             GROUP BY HIV_Info.Country, HIV_Info.Year"
 
 
+countryDivision <- dbGetQuery(db2, sqlCmd23)
+print(countryDivision)
 
+
+```
+
+
+SELECT HIV_Info.Country, HIV_Info.Year,(SUM(REPLACE(HIV_Info.number_of_people_living_with_HIV, ',', ''))/1000), Country_Info.Country_Population
+FROM HIV_Info
+INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country 
+           AND Country_Info.Year = HIV_Info.Year
+WHERE HIV_Info.Country IS NOT 'North America'
+GROUP BY HIV_Info.Country
 
 Question 5: Produce 5 unique and interesting queries using both datasets. Unique means
 that you do not use the same query 5 times and add small parts to it. (15 points,
@@ -481,6 +500,7 @@ that you do not use the same query 5 times and add small parts to it. (15 points
 ```{r}
 #Query 1: Measure of unemployment variance over years per country
 
+#Query 2:
 
 ```
 
