@@ -434,8 +434,7 @@ on Entity/Country and year for only North America (10 points)
 
 ```{r}
 sqlCmd15 <- "SELECT HIV_Info.Country, HIV_Info.Year, HIV_Info.new_cases_of_hiv_infection, 
-             Country_Info.Country_Population, Country_Info.GDP_per_capital, 
-             Country_Info.unemployment_rate, Country_Info.School_enrollment_rate
+             Country_Info.School_enrollment_rate
              FROM HIV_Info
              INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country 
              AND Country_Info.Year = HIV_Info.Year
@@ -451,13 +450,29 @@ people living with HIV and percentage of deaths from HIV then join the data
 hiv_info to the country_info table on Entity/Country and year for only North
 America (10 points)
 
-#this will work once we alter the data type of number_of_people_living_with_HIV
+Both parameters were defined within the context of total population size. The country and year column
+were selected from the HIV_Info table, while the country_population column was selected from the country_Info
+table. The column 'number_of_people_living_with_HIV' is declared using the european notation which features commas
+instead of decimal points. Commas were removed using the REPLACE function and divided by 1000 for proper conversion
+to numeric notation.
+
+The column 'percent_living' is defined as the number of individuals living with HIV divided by the total population 
+of the given country, multiplied by 100. To facilitate the division of integers, the function CAST was used to handle
+'number_of_people_living_with_HIV' as a real value in order to obtain values that contain decimals. 
+
+The column 'Percent_Death' is defined as the number of individuals who have died from HIV divided by the total population
+of the given country, multiplied by 100. The data type of 'Deaths_Total' was similarly manipulated from integer to real
+value in order to produces values which contain decimals.
+
 ```{r}
-sqlCmd16 <- "SELECT Country_Info.Country, Country_Info.Year, Country_Info.Country_Population, HIV_Info.*, 
-             (HIV_Info.number_of_people_infected_with_hiv/Country_Info.Country_Population *100) AS percentage
-             FROM Country_Info
-             INNER JOIN HIV_Info ON HIV_Info.Country = Country_Info.Country
-             AND HIV_Info.Year = Country_Info.Year"
+sqlCmd16 <- "SELECT HIV_Info.Country, HIV_Info.Year,
+	           (CAST(REPLACE(HIV_Info.number_of_people_living_with_HIV, ',', '')/1000 AS REAL)/Country_Info.Country_Population)*100 AS                Percent_Living,
+	           (CAST(HIV_Info.deaths_total AS REAL)/Country_Info.Country_Population)*100 AS Percent_Death,
+	           Country_Info.Country_Population
+             FROM HIV_Info
+             INNER JOIN Country_Info ON HIV_Info.Country = Country_Info.Country AND
+						                            HIV_Info.Year = Country_Info.Year
+             WHERE HIV_Info.Country = 'North America'"
 
 hivPercentage <- dbGetQuery(db2, sqlCmd16)
 print(hivPercentage)
@@ -469,19 +484,35 @@ number_of_people_living_with_HIV divided by Country_Population then join
 the data hiv_info to the country_info table on Entity/Country and year not in
 North America (10 point)
 
+The first step taken to achieve this value was to replace the comma within the values 
+of number_of_people_living_with_HIV so that the values can be handled as integers. As noted 
+in question 1, it seems that the values entered into the number_of_people_living_with_HIV 
+column were entered using a European notation, where commas are used in place of periods. Without
+making this assumption, the values entered into the column are clearly wrong based on how in many 
+instances the value in number_of_people_living_with_HIV outnumber the country's population. By
+removing the commas with REPLACE and dividing by 1000, the value in number_of_people_living_with_HIV 
+now matches the column "number_of_people_infected_with_HIV".
+
+With this corrected value in place, the sum of number_of_people_living_with_HIV was taken using the 
+SUM aggregate function, and was divided by the population of that country. The aggregate function was
+grouped by country to calculate the proportion of total infections against the total population in the 
+year 2007. An inner join was performed to access the Country_Info.Country_Population column.
+
+#Question: is it SUM(number_of_people_living_with_HIV) / Country_Info.Country_Population 
+#             or SUM(number_of_people_living_with_HIV / Country_Info.Country_Population)
+
+#The way the question is worded could mean either.
+
 ```{r}
-sqlCmd23 <- "SELECT HIV_Info.Country, HIV_Info.Year, CAST(((SUM(REPLACE(HIV_Info.number_of_people_living_with_HIV, ',', '')/1000))) AS                     REAL)/Country_Info.Country_Population
+sqlCmd23 <- "SELECT HIV_Info.Country, HIV_Info.Year, CAST(((SUM(REPLACE(HIV_Info.number_of_people_living_with_HIV, ',', '')/1000))) AS                     REAL)/Country_Info.Country_Population AS Proportion
              FROM HIV_Info
              INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country 
                         AND Country_Info.Year = HIV_Info.Year
              WHERE HIV_Info.Country IS NOT 'North America'
-             GROUP BY HIV_Info.Country, HIV_Info.Year"
-
+             GROUP BY HIV_Info.Country"
 
 countryDivision <- dbGetQuery(db2, sqlCmd23)
 print(countryDivision)
-
-
 ```
 
 
@@ -496,11 +527,79 @@ Question 5: Produce 5 unique and interesting queries using both datasets. Unique
 that you do not use the same query 5 times and add small parts to it. (15 points,
 3 points each)
 
+#Query 3
+A Common Table Expression was implemented to calculate the average unemployment rate and average school 
+enrollment rate in each country. North America was excluded from the data set as it appears to represent
+summed values of all countries displayed, and Bermuda was removed from analysis due to most of its associated
+values for these columns being NULL values.
+
+Average Infection rate was calculated by dividing the number of people infected with HIV by the Country Population 
+and taking the average value of each Country. these results were joined with the CTE in order to compare average infection
+rate, average unemployment rate, and average school enrollment rate between the US and Canada.
+
+#Query 4
 
 ```{r}
 #Query 1: Measure of unemployment variance over years per country
 
-#Query 2:
+#Query 2: Ratio of country deaths to population size. 
+sqlCmd24 <- "SELECT HIV_Info.Country, HIV_Info.Year, HIV_Info.deaths_total, Country_Info.Country_Population,
+	                  CAST(HIV_Info.deaths_total AS REAL) / CAST(Country_Info.Country_Population AS REAL) * 100 AS                                           Percent_Population_Loss
+             FROM HIV_Info
+                  INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country 
+                  AND Country_Info.Year = HIV_Info.Year
+            WHERE HIV_Info.Country IS NOT 'North America'
+            ORDER BY Percent_Population_Loss DESC;"
+
+percent_death <- dbGetQuery(db2, sqlCmd24)
+print(percent_death)
+
+#Query 3: Compare Average Infection Rates, average unemployment rate, and average school enrollment rate between US and Canada
+sqlCmd25 <- "WITH CTE_Average AS
+            (SELECT Country,  AVG(unemployment_rate) AS Average_Unemployment_Rate, 
+		                AVG(School_enrollment_rate) AS Average_School_enrollment_rate,
+		                Country_Population
+            FROM Country_Info
+            WHERE Country IS NOT 'Bermuda' AND Country IS NOT 'North America'
+            GROUP BY Country)
+
+            SELECT HIV_Info.Country, HIV_Info.number_of_people_infected_with_hiv, 
+	                 CTE_Average.Country_Population, 
+	                 AVG(CAST(number_of_people_infected_with_hiv AS REAL)/CAST(Country_Population AS REAL)) AS 
+	                 Average_Infection_Rate,
+	                 CTE_Average.Average_Unemployment_Rate, 
+	                 CTE_Average.Average_School_enrollment_rate
+            FROM CTE_Average
+	          JOIN HIV_Info on CTE_Average.Country = HIV_Info.Country
+            GROUP BY HIV_Info.Country"
+
+rate_comparison <- dbGetQuery(db2, sqlCmd25)
+print(rate_comparison)
+
+#Query 4: Deviation from the Mean
+sqlCmd26 <- "WITH CTE_Deviation AS(
+             SELECT Country_Info.Country, Country_Info.Year, HIV_Info.number_of_people_infected_with_hiv, 
+	                  Country_Info.Country_Population, 
+	                  AVG(CAST(HIV_info.number_of_people_infected_with_hiv AS REAL)/CAST(Country_Info.Country_Population AS REAL)*100)
+		                AS Average_Infection_Percentage
+             FROM Country_Info
+             INNER JOIN HIV_Info ON Country_Info.Country = HIV_Info.Country AND
+		                                Country_Info.Year = HIV_Info.Year
+             WHERE Country_Info.Country IS NOT 'North America'
+             GROUP BY Country_Info.Country
+)
+             SELECT HIV_Info.Country, HIV_Info.Year, HIV_Info.number_of_people_infected_with_hiv, 
+	                  Country_Info.Country_Population, 
+	                  Average_Infection_Percentage - (CAST(HIV_Info.number_of_people_infected_with_hiv AS                                                    REAL)/CAST(Country_Info.Country_Population AS REAL)*100)
+	                  AS Infection_Percentage_Deviation,
+	                  CTE_Deviation.Average_Infection_Percentage
+             FROM CTE_Deviation
+             INNER JOIN HIV_Info ON CTE_Deviation.Country = HIV_Info.Country
+             INNER JOIN Country_Info ON HIV_Info.Country = Country_Info.Country AND
+						                            HIV_Info.Year = Country_Info.Year"
+
+infection_deviation <- dbGetQuery(db2, sqlCmd26)
+print(infection_deviation)
 
 ```
 
