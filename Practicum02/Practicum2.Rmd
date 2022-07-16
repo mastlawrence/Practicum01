@@ -196,6 +196,7 @@ within the Customers table. in the column "States", we see a high value because 
 state were made and considered, whereas in the "Distinct_States" column a count was only generated for the first
 time that a new state was encountered. This also confirms that purchases were made in all 50 US states.
 
+#See if you can get the graph in Teena's practicum looking good.
 
 ```{r}
 sqlCmd9 <- "SELECT COUNT(State) AS States, COUNT(DISTINCT(State)) AS Distinct_States
@@ -276,7 +277,7 @@ points)
 CREATE TABLE "HIV_Info" (
   "Entity" TEXT,
   "Year" INTEGER,
-  "number_of_people_living_with_HIV" INTEGER,
+  "number_of_people_living_with_HIV" TEXT,
   "deaths<5" INTEGER,
   "deaths>=70" INTEGER,
   "deaths_5-14" INTEGER,
@@ -307,6 +308,8 @@ UPDATE Country_Info SET School_enrollment_rate = NULL WHERE School_enrollment_ra
 
 
 #Will discuss this one with Teena. 
+#Will add Teena's dimensional analysis of tables and proof of common columns
+
 The first point of interest are the NULL values apparent in the country_info data set. A summary of
 the NULL values is presented below. Due to the relatively small size of the data set, rows 
 containing null values were not removed. Imputation of the null values was also not performed, 
@@ -320,37 +323,63 @@ Country_Info using the SQLite command ALTER TABLE and RENAME COLUMN to change "E
 The double inner join of the data was performed by using both the Country and Year column to create
 a surrogate 'primary key' to match up the data in the two tables.
 
+#Maybe mention how/why you replace the decimal.
+#Mention that this happens with CSV files due to comma separation.
 The third point of interest arises with the comparison of the columns "number_of_people_living_with_HIV"
 and "number_of_people_infected_with_HIV". In the first column, there is a formatting error where two different
 conventions of representing large numbers are mixed up. If this data were presented to an American
 audience, the first column value for Bermuda in 2007 should read "92.076", and the second column is a rounded version
-of the first column based on this convention. Due to this, the first column will be dropped for the sake of 
-clarity and to remove redundancy.
+of the first column based on this convention.
 
+Conversion from the European to American notation was performed by removal of the 
+
+#Check all columns.
 A fourth point of interest is that although the .csv file specifies country data, it includes North America which is 
 a continent. North American HIV values in the table HIV_Info seem to be summed values from Bermuda, Canada, and the 
 United States per year.
 
 ```{r}
+library(RSQLite)
+library(tidyverse)
+
 db2 <- dbConnect(SQLite(), 
                 dbname = "C:/Users/mastl/Documents/DA5020/sqlite-tools-win32-x86-3380500/HIV_Country_Info.db")
+
+#List of Tables.
+#Try to remove the HIV_Info; table.
+dbListTables(db2)
 #-------------------------------------------------------------------------------------------------------------
 
-HIV_info <- dbGetQuery(db2, "SELECT * FROM HIV_Info")
+#First 5 rows of HIV_Info table.
+HIV_info <- dbGetQuery(db2, "SELECT * FROM HIV_Info LIMIT 5")
 print(HIV_info)
 
-Country_info <- dbGetQuery(db2, "SELECT * FROM Country_Info")
+#First 5 rows of Country_Info table.
+Country_info <- dbGetQuery(db2, "SELECT * FROM Country_Info LIMIT 5")
 print(Country_info)
 
+#First five rows of combined table. 
 sqlCmd14 <- "SELECT *
              FROM HIV_Info
              INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country
-             AND Country_Info.Year = HIV_Info.Year;"
+             AND Country_Info.Year = HIV_Info.Year
+             LIMIT 5;"
+
+joined_tables <- dbGetQuery(db2, sqlCmd14)
+print(joined_tables)
 
 #-------------------------------------------------------------------------------------------------------------
 #HIV Data Summary
+#Count and Distinct Count from Teena's Code.
+
 data_explore1 <- dbGetQuery(db2, sqlCmd14)
 print(data_explore1)
+
+## evaluating the number of observations and variables in the HIV_Info Table.
+dbGetQuery(db2, 'SELECT COUNT(*) FROM HIV_info')
+dbGetQuery(db2, 'SELECT * FROM HIV_info LIMIT 2')
+
+## there are 44 observations and 11 variables in HIV_info table
 
 sqlCmd15 <- 'SELECT AVG("deaths<5"), AVG("deaths>=70"), 
                     AVG("deaths_5-14"), AVG("deaths_15-49"),
@@ -394,8 +423,56 @@ print(dataMax)
 nullValues <- dbGetQuery(db2, sqlCmd18)
 print(nullValues)
 
+## 1. checking the columns Country with year in the HIV_info table to see if it uniquely 
+# identify the records for each observation
+dbGetQuery(db2, 'SELECT COUNT(DISTINCT Country) FROM HIV_info')
+
+# it shows there are four Countries information in the table
+
+dbGetQuery(db2, 'SELECT DISTINCT Country FROM HIV_info')
+
+# the four Countries are Bermuda, Canada, North America continent and United States
+
+# checking the year column
+dbGetQuery(db2, 'SELECT COUNT(DISTINCT Year) FROM HIV_info')
+
+# Year variables hold information for 11 years
+dbGetQuery(db2, 'SELECT DISTINCT Year FROM HIV_info')
+# information is from 2007-2017
+
+# checking if the year are for different countries
+dbGetQuery(db2, 'SELECT Count(Country), COUNT(Year) 
+                 FROM HIV_info 
+                 WHERE Country = "Bermuda" AND Year BETWEEN "2007" AND "2017"')
+
+dbGetQuery(db2, 'SELECT Count(Country), COUNT(Year) 
+                 FROM HIV_info 
+                 WHERE COuntry = "Canada" AND Year BETWEEN "2007" AND "2017"')
+
+
+dbGetQuery(db2, 'SELECT Count(Country), COUNT(Year) 
+                 FROM HIV_info 
+                 WHERE Country = "North America" AND Year BETWEEN "2007" AND "2017"')
+
+
+dbGetQuery(db2, 'SELECT Count(Country), COUNT(Year) 
+                 FROM HIV_info 
+                 WHERE Country = "United States" AND Year BETWEEN "2007" AND "2017"')
+
+# it shows the observations from 2007-2017 for each Country, hence 44 observations
+# this tables stores the information regarding the number of people infected with
+# HIV and the number of deaths in different age group in four Countries from year 2007-2017
+
 #-------------------------------------------------------------------------------------------------------------
 #Country_Info data summary 
+#Add code from Teena's table.
+
+## evaluating the number of observations and variables in the Country_Info Table. 
+
+dbGetQuery(db2, 'SELECT COUNT(*) FROM country_info')
+dbGetQuery(db2, 'SELECT * FROM country_info LIMIT 2')
+
+## there are 44 observations and 6 variables in country_info table
 
 sqlCmd19 <- "SELECT AVG(Country_Population), AVG(GDP_per_capital), 
 	                  AVG(unemployment_rate), AVG(School_enrollment_rate)
@@ -426,6 +503,50 @@ print(dataMax2)
 
 nullValues2 <- dbGetQuery(db2, sqlCmd22)
 print(nullValues2)
+
+## 2. checking the Country and year column if it is key for the country_info table
+
+dbGetQuery(db2, 'SELECT COUNT(DISTINCT Country) FROM country_info')
+
+# it shows there are four countries information in the table
+
+dbGetQuery(db2, 'SELECT DISTINCT Country FROM country_info')
+
+# the four Countries are Bermuda, Canada, North America continent and United States
+
+dbGetQuery(db2, 'SELECT COUNT(DISTINCT Year) FROM country_info')
+
+# Year variables hold information for 11 years
+dbGetQuery(db2, 'SELECT DISTINCT Year FROM country_info')
+# information is from 2007-2017 
+
+# checking if the year are for different countries
+dbGetQuery(db2, 'SELECT Count(Country), COUNT(Year) 
+                 FROM country_info 
+                 WHERE Country = "Bermuda" AND Year BETWEEN "2007" AND "2017"')
+
+dbGetQuery(db2, 'SELECT Count(Country), COUNT(Year) 
+                 FROM country_info 
+                 WHERE Country = "Canada" AND Year BETWEEN "2007" AND "2017"')
+
+
+dbGetQuery(db2, 'SELECT Count(Country), COUNT(Year) 
+                 FROM country_info 
+                 WHERE Country = "North America" AND Year BETWEEN "2007" AND "2017"')
+
+
+dbGetQuery(db2, 'SELECT Count(Country), COUNT(Year) 
+                 FROM country_info 
+                 WHERE Country = "United States" AND Year BETWEEN "2007" AND "2017"')
+
+# it shows the observation for four countries from 2007-2017 
+# country_info table  stores the population, information, GDP per capital, 
+# unemployment rate and school enrollment rate in Bermuda, Canada, North America and
+# United States from 2007-2017
+
+## Both the tables can be joined on country with year column, as it together 
+# identifies the observations in both the tables
+
 ```
 
 Question 2: Select the Country, Year, new_cases_of_hiv_infection, and
@@ -433,15 +554,37 @@ School_enrollment_rate then join the data hiv_info to the country_info table
 on Entity/Country and year for only North America (10 points)
 
 ```{r}
-sqlCmd15 <- "SELECT HIV_Info.Country, HIV_Info.Year, HIV_Info.new_cases_of_hiv_infection, 
-             Country_Info.School_enrollment_rate
-             FROM HIV_Info
-             INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country 
-             AND Country_Info.Year = HIV_Info.Year
-             WHERE HIV_Info.Country = 'North America'"
+sqlCmd15 <- "SELECT Country, Year, new_cases_of_hiv_infection, 
+             School_enrollment_rate
+             FROM (SELECT *
+				           FROM HIV_Info
+				           INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country 
+				           AND Country_Info.Year = HIV_Info.Year)
+             WHERE Country = 'North America'"
 
 hivCountryJoin <- dbGetQuery(db2, sqlCmd15)
 print(hivCountryJoin)
+
+#-------------------------------------------------------------------------------------
+ggplot(data = hivCountryJoin, mapping = aes(x = Year, y = new_cases_of_hiv_infection)) +
+  geom_point(color = 'red') +
+  labs(
+    title = "New Cases of HIV per Year in North America",
+    caption = "Source: HIV_Info and Country_Info on NEU Canvas Page"
+  ) +
+  xlab("Year") +
+  ylab("Number of People Living with HIV") +
+  theme_bw()
+
+ggplot(data = hivCountryJoin, mapping = aes(x = Year, y = School_enrollment_rate)) +
+  geom_point(color = 'blue') +
+    labs(
+    title = "School Enrollment Rate per Year in North America",
+    caption = "Source: HIV_Info and Country_Info on NEU Canvas Page"
+  ) +
+  xlab("Year") +
+  ylab("School Enrollment Rate") +
+  theme_bw()
 ```
 
 
@@ -464,18 +607,42 @@ The column 'Percent_Death' is defined as the number of individuals who have died
 of the given country, multiplied by 100. The data type of 'Deaths_Total' was similarly manipulated from integer to real
 value in order to produces values which contain decimals.
 
+Each calculated value was rounded to 5 decimal points to analysis the small differences in values over each year.
+
 ```{r}
-sqlCmd16 <- "SELECT HIV_Info.Country, HIV_Info.Year,
-	           (CAST(REPLACE(HIV_Info.number_of_people_living_with_HIV, ',', '')/1000 AS REAL)/Country_Info.Country_Population)*100 AS                Percent_Living,
-	           (CAST(HIV_Info.deaths_total AS REAL)/Country_Info.Country_Population)*100 AS Percent_Death,
-	           Country_Info.Country_Population
-             FROM HIV_Info
-             INNER JOIN Country_Info ON HIV_Info.Country = Country_Info.Country AND
-						                            HIV_Info.Year = Country_Info.Year
-             WHERE HIV_Info.Country = 'North America'"
+sqlCmd16 <- "SELECT Country, Year,
+	           ROUND((CAST(REPLACE(number_of_people_living_with_HIV, ',', '')/1000 AS REAL)/Country_Population)*100, 5) AS                            Percent_Living,
+	           ROUND((CAST(deaths_total AS REAL)/Country_Population)*100, 5) AS Percent_Death,
+	           Country_Population
+             FROM (SELECT *
+				           FROM HIV_Info
+				           INNER JOIN Country_Info ON HIV_Info.Country = Country_Info.Country AND
+						                                  HIV_Info.Year = Country_Info.Year)
+             WHERE Country = 'North America'"
 
 hivPercentage <- dbGetQuery(db2, sqlCmd16)
 print(hivPercentage)
+
+#-------------------------------------------------------------------------------
+ggplot(data = hivPercentage, mapping = aes(x = Year, y = Percent_Living)) +
+  geom_point(color = 'red') +
+  labs(
+    title = "Percentage of People Living with HIV per Year in North America",
+    caption = "Source: HIV_Info and Country_Info on NEU Canvas Page"
+  ) +
+  xlab("Year") +
+  ylab("% of People Living with HIV") +
+  theme_bw()
+
+ggplot(data = hivPercentage, mapping = aes(x = Year, y = Percent_Death)) +
+  geom_point(color = 'blue') +
+   labs(
+    title = "Percentage of Population Death per Year from HIV",
+    caption = "Source: HIV_Info and Country_Info on NEU Canvas Page"
+  ) +
+  xlab("Year") +
+  ylab("% of population death from HIV") +
+  theme_bw()
 ```
 
 
@@ -501,7 +668,9 @@ year 2007. An inner join was performed to access the Country_Info.Country_Popula
 #Question: is it SUM(number_of_people_living_with_HIV) / Country_Info.Country_Population 
 #             or SUM(number_of_people_living_with_HIV / Country_Info.Country_Population)
 
+#4 groups for four countries
 #The way the question is worded could mean either.
+#Ask TA about this.
 
 ```{r}
 sqlCmd23 <- "SELECT HIV_Info.Country, HIV_Info.Year, CAST(((SUM(REPLACE(HIV_Info.number_of_people_living_with_HIV, ',', '')/1000))) AS                     REAL)/Country_Info.Country_Population AS Proportion
@@ -523,6 +692,7 @@ INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country
 WHERE HIV_Info.Country IS NOT 'North America'
 GROUP BY HIV_Info.Country
 
+
 Question 5: Produce 5 unique and interesting queries using both datasets. Unique means
 that you do not use the same query 5 times and add small parts to it. (15 points,
 3 points each)
@@ -538,21 +708,46 @@ and taking the average value of each Country. these results were joined with the
 rate, average unemployment rate, and average school enrollment rate between the US and Canada.
 
 #Query 4
+#Try using negative exponent to replace square root. 
+#Fix table names for 
+#Try to corrolate a few more variables to see if there are stronger correlations.
 
 ```{r}
-#Query 1: Measure of unemployment variance over years per country
+#Query 1: Correlated variables.
 
-#Query 2: Ratio of country deaths to population size. 
-sqlCmd24 <- "SELECT HIV_Info.Country, HIV_Info.Year, HIV_Info.deaths_total, Country_Info.Country_Population,
-	                  CAST(HIV_Info.deaths_total AS REAL) / CAST(Country_Info.Country_Population AS REAL) * 100 AS                                           Percent_Population_Loss
-             FROM HIV_Info
-                  INNER JOIN Country_Info ON Country_Info.Country = HIV_Info.Country 
-                  AND Country_Info.Year = HIV_Info.Year
-            WHERE HIV_Info.Country IS NOT 'North America'
-            ORDER BY Percent_Population_Loss DESC;"
+hiv_sch_enroll_cor <- dbGetQuery(db2, 'WITH subquery AS (
+                                                        SELECT Country, Year, Country_Population, School_enrollment_rate
+                                                        FROM country_info
+                                                        WHERE School_enrollment_rate IS NOT "Null")
+                                                        
+                                       SELECT h.Country AS Country,
+                                              h.Year, h.number_of_people_infected_with_HIV, subquery.School_enrollment_rate
+                                       FROM HIV_info AS h
+                                       INNER JOIN subquery ON h.Country=subquery.Country AND 
+                                                              h.Year=subquery.Year
+                                       WHERE h.Year BETWEEN 2007 AND 2017
+                                       GROUP BY h.Year
+                                       ORDER BY subquery.School_enrollment_rate DESC')
 
-percent_death <- dbGetQuery(db2, sqlCmd24)
-print(percent_death)
+print(hiv_sch_enroll_cor)
+
+#Query 2: Effect of growth in population to unemployment rate.
+
+canada_diff_q <- 'SELECT c1.Country, c1.Country_Population AS pop2007, 
+	                       c2.Country_Population AS pop2017, 
+	                       c2.Country_Population-c1.Country_Population AS Diff,
+	                       c1.unemployment_rate AS employ2007, 
+	                       c2.unemployment_rate AS employ2017, 
+	                       ROUND(c2.unemployment_rate - c1.unemployment_rate, 3) AS employ_diff
+                  FROM country_info AS c1
+                  JOIN country_info AS c2
+                  USING(Country)
+                  WHERE Country="Canada"
+                  AND c1.Year = 2007 AND c1.Year= c2.Year-10'
+
+canada_diff_r <- dbGetQuery(db2, canada_diff_q)
+print(canada_diff_r)
+
 
 #Query 3: Compare Average Infection Rates, average unemployment rate, and average school enrollment rate between US and Canada
 sqlCmd25 <- "WITH CTE_Average AS
@@ -601,10 +796,6 @@ sqlCmd26 <- "WITH CTE_Deviation AS(
 infection_deviation <- dbGetQuery(db2, sqlCmd26)
 print(infection_deviation)
 
+#Query 5: check that North American values are sums of the other three countries.
+
 ```
-
-
-
-
-
-
