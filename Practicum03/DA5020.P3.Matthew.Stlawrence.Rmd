@@ -2,3 +2,80 @@
 title: "Practicum 3"
 output: html_notebook
 ---
+
+
+Main objective: Determine what factors contribute to tip amount for NYC taxi drivers.
+
+#All libraries are allowed.
+
+Question 1: 
+
+Part 1: • Load the NYC Green Taxi Trip Records data into a data frame or tibble
+
+```{r}
+library(tidyverse)
+library(caret)
+library(psych)
+
+tripdata.df <- read.csv("2018_Green_Taxi_Trip_Data.csv", header = TRUE)
+
+```
+
+Part 2: • explore the data to identify any patterns and analyze the relationships between the 
+features and the target variable i.e. tip amount. At a minimum, you should analyze: 1) the distribution,
+2) the correlations 3) missing values and 4) outliers — provide supporting visualizations and explain 
+all your steps.
+
+Initial summary statistics are printed below. NA values are counted and a proportion of how many values are missing is calculated. The 
+column 'ehail fee' is completely missing, and was removed below. The column "Trip type" is largely in-tact with only three missing
+values present, and missing values will be replaced with the most common type of trip (1).
+
+```{r}
+#Summary Statistics
+glimpse(tripdata.df)
+dim(tripdata.df)
+summary(tripdata.df)
+
+#Count NA values
+for(i in 1:ncol(tripdata.df)){
+  print(colnames(tripdata.df[i]))
+  print(sum(is.na(tripdata.df[,i])))
+  print(as.double(sum(is.na(tripdata.df[,i])) / nrow(tripdata.df)*100))
+}
+
+#Handling Missing Values
+tripdata.clean <- tripdata.df %>%
+  select(-ehail_fee)
+tripdata.clean$trip_type <- replace_na(1)
+
+#Correct the class of mis-classed variables
+#Revisit the as.numeric() error
+tripdata.clean <- tripdata.clean %>%
+  mutate(fare_amount = as.numeric(fare_amount)) %>%
+  mutate(total_amount = as.numeric(total_amount)) %>%
+  mutate(lpep_pickup_datetime = as.POSIXct(lpep_pickup_datetime, format = "%m/%d/%Y %H:%M")) %>%
+  mutate(lpep_dropoff_datetime = as.POSIXct(lpep_dropoff_datetime, format = "%m/%d/%Y %H:%M")) %>%
+  mutate(across(c(VendorID, store_and_fwd_flag, RatecodeID, payment_type, trip_type), as.factor))
+
+#We will decode the variables for now, but may remove based on model needs.
+
+levels(tripdata.clean$VendorID) <- c("Creative Mobile Technologies", "VeriFone, INC")
+levels(tripdata.clean$RatecodeID) <- c("Standard rate", "JFK", "Newark", "Nassau or Westchester", 
+                                       "Negociated Fare", "Group Ride", "NA")
+levels(tripdata.clean$payment_type) <- c("Credit Card", "Cash", "No charge", "Dispute", "Unknown", "Voided Trip")
+levels(tripdata.clean$trip_type) <- c("Street-hail", "Dispatch")
+
+corr(tripdata.clean[c("VendorID", "lpep_pickup_datetime", "lpep_dropoff_datetime", "store_and_fwd_flag",
+                              "RatecodeID", "PULocationID", "DOLocationID", "passenger_count", "trip_distance",
+                              "fare_amount", "extra")])
+
+
+
+#pairs.panels(tripdata.clean[c("VendorID", "lpep_pickup_datetime", "lpep_dropoff_datetime", "store_and_fwd_flag",
+#                              "RatecodeID", "PULocationID", "DOLocationID", "passenger_count", "trip_distance",
+#                             "fare_amount", "extra")])
+
+
+
+```
+
