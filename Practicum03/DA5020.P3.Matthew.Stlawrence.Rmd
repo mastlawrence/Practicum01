@@ -69,6 +69,121 @@ tripdata.clean <- tripdata.clean %>%
 tripdata.clean$store_and_fwd_flag <- ifelse(tripdata.clean$store_and_fwd_flag == "N", 0, 1)
 
 
+#Distribution before outlier removal. For the love of god turn this into a function. 
+#Argument for variable name and argument for title / xlab.
+
+ggplot(data = tripdata.clean, mapping = aes(x = passenger_count)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
+  labs(title = "Pre-Removal distribution of Passenger Count",
+       caption = "2018 NYC Traffic data") +
+  theme_bw()
+
+ggplot(data = tripdata.clean, mapping = aes(x = trip_distance)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
+  labs(title = "Pre-Removal Distribution of Trip Distance",
+       caption = "2018 NYC Traffic data") +
+  theme_bw()
+
+ggplot(data = tripdata.clean, mapping = aes(x = fare_amount)) +
+  geom_histogram(binwidth = 5, color = "black", fill = "lightblue") +
+  labs(title = "Pre-Removal Distribution of Fare Amount",
+       caption = "2018 NYC Traffic data") +
+  theme_bw()
+
+ggplot(data = tripdata.clean, mapping = aes(x = tip_amount)) +
+  geom_histogram(binwidth = 0.5, color = "black", fill = "lightblue") +
+  labs(title = "Pre-Removal Distribution of Tip Amount",
+       caption = "2018 NYC Traffic data") +
+  theme_bw()
+
+ggplot(data = tripdata.clean, mapping = aes(x = tolls_amount)) +
+  geom_histogram(binwidth = 0.5, color = "black", fill = "lightblue") +
+  labs(title = "Pre-Removal Distribution of Tolls Amount",
+       caption = "2018 NYC Traffic data") +
+  theme_bw()
+
+ggplot(data = tripdata.clean, mapping = aes(x = total_amount)) +
+  geom_histogram(binwidth = 5, color = "black", fill = "lightblue") +
+  labs(title = "Pre-Removal Distribution of Total Amount",
+       caption = "2018 NYC Traffic data") +
+  theme_bw()
+
+
+#Outlier removal
+passenger.mean <- mean(tripdata.clean$passenger_count)
+passenger.sd <- sd(tripdata.clean$passenger_count)
+tripdata.clean$zpassenger_count <- abs((passenger.mean - tripdata.clean$passenger_count)/passenger.sd)
+
+distance.mean <- mean(tripdata.clean$trip_distance)
+distance.sd <- sd(tripdata.clean$trip_distance)
+tripdata.clean$ztrip_distance <- abs((distance.mean - tripdata.clean$trip_distance)/distance.sd)
+
+fare.mean <- mean(tripdata.clean$fare_amount)
+fare.sd <- sd(tripdata.clean$fare_amount)
+tripdata.clean$zfare_amount <- abs((fare.mean - tripdata.clean$fare_amount)/fare.sd)
+
+tip.mean <- mean(tripdata.clean$tip_amount)
+tip.sd <- sd(tripdata.clean$tip_amount)
+tripdata.clean$ztip_amount <- abs((tip.mean - tripdata.clean$tip_amount)/tip.sd)
+
+tolls.mean <- mean(tripdata.clean$tolls_amount)
+tolls.sd <- sd(tripdata.clean$tolls_amount)
+tripdata.clean$ztolls_amount <- abs((tolls.mean - tripdata.clean$tolls_amount)/tolls.sd)
+
+total.mean <- mean(tripdata.clean$total_amount)
+total.sd <- sd(tripdata.clean$total_amount)
+tripdata.clean$ztotal_amount <- abs((total.mean - tripdata.clean$total_amount)/total.sd)
+
+#This cuts out a ton of data. Bring up to group other ways of handling outliers. 
+
+tripdata.clean <- tripdata.clean %>%
+  filter(zpassenger_count < 3) %>%
+    filter(ztrip_distance < 3) %>%
+      filter(zfare_amount < 3) %>% 
+        filter(ztip_amount < 3) %>%
+      filter(ztolls_amount < 3) %>%
+    filter(ztotal_amount < 3) %>%
+  select(!c(zpassenger_count, ztrip_distance, zfare_amount,
+            ztip_amount, ztolls_amount, ztotal_amount))
+
+
+ggplot(data = tripdata.clean, mapping = aes(x = passenger_count)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
+  labs(title = "Post-Removal distribution of Passenger Count",
+       caption = "2018 NYC Traffic data") +
+  theme_bw()
+
+ggplot(data = tripdata.clean, mapping = aes(x = trip_distance)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
+  labs(title = "Post-Removal Distribution of Trip Distance",
+       caption = "2018 NYC Traffic data") +
+  theme_bw()
+
+ggplot(data = tripdata.clean, mapping = aes(x = fare_amount)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
+  labs(title = "Post-Removal Distribution of Fare Amount",
+       caption = "2018 NYC Traffic data") +
+  theme_bw()
+
+ggplot(data = tripdata.clean, mapping = aes(x = tip_amount)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
+  labs(title = "Post-Removal Distribution of Tip Amount",
+       caption = "2018 NYC Traffic data") +
+  theme_bw()
+
+ggplot(data = tripdata.clean, mapping = aes(x = tolls_amount)) +
+  geom_histogram(binwidth = 0.1, color = "black", fill = "lightblue") +
+  labs(title = "Post-Removal Distribution of Tolls Amount",
+       caption = "2018 NYC Traffic data") +
+  scale_y_log10() +
+  theme_bw()
+
+ggplot(data = tripdata.clean, mapping = aes(x = total_amount)) +
+  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
+  labs(title = "Post-Removal Distribution of Total Amount",
+       caption = "2018 NYC Traffic data") +
+  theme_bw()
+
 #Identify correlations between variables 
 tripdata.cor <- tripdata.clean %>%
   select(-lpep_pickup_datetime, -lpep_dropoff_datetime, -trip_time, -trip_type)
@@ -76,31 +191,8 @@ tripdata.cor <- tripdata.clean %>%
 correlation.matrix <- cor(tripdata.cor)
 print(correlation.matrix)
 
-#pairs.panels(tripdata.cor)
-
-for(i in 1:ncol(tripdata.cor)){
-  hist(tripdata.cor[,i],
-  main = paste("Histogram of", names(tripdata.cor[i])),
-  xlab = names(tripdata.cor[i]),
-  col = "lightblue")
-}
-
-outlier.removal <- function(variable.name) {
-
-  variable.mean <- mean(variable.name)
-  variable.sd <- sd(variable.name)
-  outlier.df <- abs(variable.mean - variable.name / variable.sd)
-  return(outlier.df)
-}
-
-
 ```
 
-```{r}
-#Test ENV
-
-tripdata.test <- outlier.removal(tripdata.test$tip_amount)
-```
 
 
 
