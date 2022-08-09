@@ -16,6 +16,8 @@ Part 1: • Load the NYC Green Taxi Trip Records data into a data frame or tibbl
 library(tidyverse)
 library(caret)
 library(psych)
+library(FNN)
+
 
 tripdata.df <- read.csv("2018_Green_Taxi_Trip_Data.csv", header = TRUE)
 
@@ -35,6 +37,10 @@ values present, and missing values will be replaced with the most common type of
 #Things strongly correlated to tip amount seem to be the type of payment, the total amount of the ride, and the distance of the trip. 
 #Pickup and dropoff locations have a pretty binomial distribution.
 #Check for outliers: Passenger_count, trip_distance, fare_amount, tip_amount, tolls_amount, total_amount,
+#Backwards stepwise feature selection will be performed.
+#Backwards stepwise model suggests inclusion of all variables in the model. Should re-evaluate after addressing covariance.
+#Backwards stepwise model is probably wrong.
+#Get rid of negative money values they do not make any sense.
 
 ```{r}
 #Summary Statistics
@@ -48,12 +54,10 @@ for(i in 1:ncol(tripdata.df)){
   print(sum(is.na(tripdata.df[,i])))
   print(as.double(sum(is.na(tripdata.df[,i])) / nrow(tripdata.df)*100))
 }
-
 #Handling Missing Values
 tripdata.clean <- tripdata.df %>%
   select(-ehail_fee)
 tripdata.clean$trip_type <- replace_na(1)
-
 
 #Conversion of variables to numerics for use in model.
 tripdata.clean <- tripdata.clean %>%
@@ -62,9 +66,9 @@ tripdata.clean <- tripdata.clean %>%
       mutate(fare_amount = as.numeric(fare_amount)) %>%
         mutate(total_amount = as.numeric(total_amount)) %>%
       mutate(lpep_pickup_datetime = as.POSIXct(lpep_pickup_datetime, format = "%m/%d/%Y %H:%M")) %>%
-    mutate(lpep_dropoff_datetime = as.POSIXct(lpep_dropoff_datetime, format = "%m/%d/%Y %H:%M")) %>%
-  mutate(trip_time = lpep_dropoff_datetime - lpep_pickup_datetime)
-  
+    mutate(lpep_dropoff_datetime = as.POSIXct(lpep_dropoff_datetime, format = "%m/%d/%Y %H:%M"))
+
+
 #Conversion of categorical variables to numeric dummy variables
 tripdata.clean$store_and_fwd_flag <- ifelse(tripdata.clean$store_and_fwd_flag == "N", 0, 1)
 
@@ -85,7 +89,7 @@ ggplot(data = tripdata.clean, mapping = aes(x = trip_distance)) +
   theme_bw()
 
 ggplot(data = tripdata.clean, mapping = aes(x = fare_amount)) +
-  geom_histogram(binwidth = 5, color = "black", fill = "lightblue") +
+  geom_histogram(binwidth = 5, color = "black", fill = "lightblue", stat = "count") +
   labs(title = "Pre-Removal Distribution of Fare Amount",
        caption = "2018 NYC Traffic data") +
   theme_bw()
@@ -103,11 +107,10 @@ ggplot(data = tripdata.clean, mapping = aes(x = tolls_amount)) +
   theme_bw()
 
 ggplot(data = tripdata.clean, mapping = aes(x = total_amount)) +
-  geom_histogram(binwidth = 5, color = "black", fill = "lightblue") +
+  geom_histogram(binwidth = 5, color = "black", fill = "lightblue", stat = "count") +
   labs(title = "Pre-Removal Distribution of Total Amount",
        caption = "2018 NYC Traffic data") +
   theme_bw()
-
 
 #Outlier removal
 passenger.mean <- mean(tripdata.clean$passenger_count)
@@ -146,7 +149,7 @@ tripdata.clean <- tripdata.clean %>%
   select(!c(zpassenger_count, ztrip_distance, zfare_amount,
             ztip_amount, ztolls_amount, ztotal_amount))
 
-
+#Distibutions after outlier removal
 ggplot(data = tripdata.clean, mapping = aes(x = passenger_count)) +
   geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
   labs(title = "Post-Removal distribution of Passenger Count",
@@ -186,36 +189,107 @@ ggplot(data = tripdata.clean, mapping = aes(x = total_amount)) +
 
 #Identify correlations between variables 
 tripdata.cor <- tripdata.clean %>%
-  select(-lpep_pickup_datetime, -lpep_dropoff_datetime, -trip_time, -trip_type)
+  select(-lpep_pickup_datetime, -lpep_dropoff_datetime, -trip_type)
 
 correlation.matrix <- cor(tripdata.cor)
 print(correlation.matrix)
 
+#Feature Selection: Lets do this once we get the model up and running.
+#Backwards stepwise
+tip.model <- lm(formula = tip_amount ~ lpep_pickup_datetime+lpep_dropoff_datetime+store_and_fwd_flag+
+                                        RatecodeID+PULocationID+DOLocationID+passenger_count+trip_distance+
+                                        fare_amount+extra+mta_tax+tolls_amount+improvement_surcharge+
+                                        total_amount+payment_type, data = tripdata.clean)
+summary(tip.model)
+
+
+#Feature Engineering: Trip Time
+tripdata.clean <- tripdata.clean %>%
+  mutate(trip_time = lpep_dropoff_datetime - lpep_pickup_datetime) %>%
+    mutate(trip_time = as.character(trip_time)) %>%
+  mutate(trip_time = as.numeric(trip_time))
+
+time.mean <- mean(tripdata.clean$trip_time)
+time.sd <- sd(tripdata.clean$trip_time)
+tripdata.clean$ztrip_time <- abs((time.mean - tripdata.clean$trip_time)/time.sd)
+
+tripdata.clean <- tripdata.clean %>%
+  filter(ztrip_time < 3) %>%
+  select(-ztrip_time)
+
+ggplot(data = tripdata.clean, mapping = aes(x = trip_time)) +
+  geom_histogram(binwidth = 1/5, color = "black", fill = "lightblue") +
+  labs(title = "Distribution of Trip Time",
+       caption = "2018 NYC Traffic data") +
+  scale_x_log10() +
+  theme_bw()
+
+ggplot(data = tripdata.clean, mapping = aes(x = trip_time, y = tip_amount)) +
+  geom_point() 
+
+time.cor <- cor(x = tripdata.clean$trip_time, y = tripdata.clean$tip_amount, method = "pearson")
+print(time.cor)
+```
+
+
+Question 2: Data Preparation
+
+part 1: • Preprocess the data: handle missing data and outliers, perform any suitable data transformation 
+          steps, etc. Also, ensure that you filter the data. The goal is to predict the tip amount, therefore you 
+          need to ensure that you extract the data that contains this information. Hint: read the data dictionary.
+
+See above.
+
+
+Part 2: • Normalize the data: perform either max-min normalization or z-score standardization on the 
+          continuous variables/features.
+
+Min-max normalization is performed below. Pickup and dropoff times have been removed prior to normalization, and are represented by the 
+feature "trip time" engineered above. This allow for trip time to be factored into the model while also converting the fields into a 
+class which can be normalized and handled by the model.
+
+#For loop works but coerces a metric shit ton of NAs for trip type. Figure out what is going on with that.
+#Think about what to do with categorical variables here.
+#LocationIDs. Do they really make sense to normalize? 
+#Probably a bad idea for 
+
+```{r}
+tripdata.model <- tripdata.clean %>%
+  select(-lpep_pickup_datetime, -lpep_dropoff_datetime, -trip_type)
+
+
+for(i in 1:ncol(tripdata.model)) {
+  minimum <- min(tripdata.model[i])
+  maximum <- max(tripdata.model[i])
+  tripdata.model[i] <- (tripdata.model[i] - minimum) / (maximum - minimum)
+}
+
+summary(tripdata.model)
+```
+
+Part 3: • Prepare the data for modeling: shuffle the data and split it into training and test sets. The percent 
+          split between the training and test set is your decision. However, clearly indicate the reason.
+          
+Initial testing will be performed with an 80:20 split between training and testing data. 
+
+```{r}
+set.seed(784)
+
+index.tip <- createDataPartition(y = tripdata.model$tip_amount, p = 0.80, list = FALSE)
+training.data <- tripdata.model[index.tip,]
+testing.data <- tripdata.model[-index.tip]
 ```
 
 
 
+Question 3: • In this step you will develop the k-nn regression model. Create a function with the following name 
+and arguments: knn.predict(data_train, data_test, k);
 
 
+https://daviddalpiaz.github.io/r4sl/knn-reg.html
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r}
+knn.reg(train = training.data, y = training.data$tip_amount, k = 4)
+```
 
 
