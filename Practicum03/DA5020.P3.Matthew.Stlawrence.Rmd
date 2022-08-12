@@ -11,10 +11,16 @@ taxi drivers.
 
 #All libraries are allowed.
 
+#Ask the TA:
+
+- include full correlation matrix in Q1? 
+- Can we swap feature engineering and feature selection?
+- Show them correlation matrix, do they want the categorical variables one-hot encoded or left numeric?
+- Can we combine Q1 and Q2?
+
 Question 1:
 
-Part 1: • Load the NYC Green Taxi Trip Records data into a data frame or
-tibble
+Part 1: • Load the NYC Green Taxi Trip Records data into a data frame or tibble
 
 ```{r}
 library(tidyverse)
@@ -31,23 +37,42 @@ tripdata.df <- read.csv("2018_Green_Taxi_Trip_Data.csv", header = TRUE)
 
 ```
 
-Part 2: • explore the data to identify any patterns and analyze the
-relationships between the features and the target variable i.e. tip
-amount. At a minimum, you should analyze: 1) the distribution, 2) the
-correlations 3) missing values and 4) outliers --- provide supporting
-visualizations and explain all your steps.
 
-Initial summary statistics are printed below. NA values are counted and
-a proportion of how many values are missing is calculated. The column
-'ehail fee' is completely missing, and was removed below. The column
-"Trip type" is largely in-tact with only three missing values present,
-and missing values will be replaced with the most common type of trip
-(1).
+Question 1 & 2: Data Understanding / Data Preparation - Distributions & Missing Values
 
-#Things strongly correlated to tip amount seem to be the type of payment, the total amount of the ride, and the distance of the trip.
-#Backwards stepwise model suggests inclusion of all variables in the model. Should re-evaluate after addressing covariance. #Put everythingin as factors for Q1 and then re-encode in Q2. 
-#Create \~ 5 bins for PULocationID and encode. #Make sure all data is for 2018. #Check out scale function. 
-#Nightly tips.
+The dimensions and distributions of the data set is displayed below, along with any missing values within the dataset. One column, ehail_fee, was completely missing and was removed entirely. The column "Trip type" is largely in-tact with only three missing values present, and missing values will be replaced with the most common type of trip (1).
+
+Many errors arose while importing the data set which prevent the full assessment of each variable, and the following have been corrected below:
+  
+  -the columns fare_amount and total_amount are imported as the character class due to the presence of a comma in a few of 
+   the numbers. These commas were removed using gsub() and the character values were converted to numeric.
+  
+  -lpep_pickup_datetime and lpep_dropoff_datetime were imported as characters, and are more useful if converted to the 
+   POSIxct datetime class. That conversion is performed below.
+   
+  -The assignment requires us to analyze data from 2018, but there are several entries from other years within the dataset.
+   Any date not from 2018 was removed using the filter() function from dplyr.
+   
+  -Per the data dictionary, tips are only entered into the data set during credit card transactions. The data has been 
+   filtered by payment_type to only include credit card payments.
+   
+  -RatecodeID only has definitions for factors 1 through 6, yet there are a few values for value '99' present which are undefined
+   in the dictionary. Unable to be defined, these values were removed from the data set using the filter() function in dplyr.
+  
+  -Many values are encoded within the dataset by a method which is not conducive to model construction. These variables are 
+   decoded below for clarity and in preparation for one-hot encoding later in the model construction process.
+   
+   
+The distribution of each variable is evaluated below, and used to evaluated the impact of different missing value and outlier
+removal strategies. The x-axis of some variables with a heavy skew have been limited using xlim() to better display skewed shape
+of the variable. 
+
+A key observation is that over 60% of the data set is comprised of data where no tips are offered. If this were a classification
+model to determine whether a driver was going to be tipped or not, this data would be extremely useful. However, in a regression
+model it runs the risk of introducing a significant amount of noise.
+
+It is also observed that many of the variables are strongly right-skewed, which is expected to improve once outliers are 
+removed.
 
 ```{r}
 #Summary Statistics
@@ -55,7 +80,7 @@ glimpse(tripdata.df)
 dim(tripdata.df)
 summary(tripdata.df)
 
-#Count NA values
+#Count NA Values
 for(i in 1:ncol(tripdata.df)){
   print(colnames(tripdata.df[i]))
   print(sum(is.na(tripdata.df[,i])))
@@ -65,10 +90,10 @@ for(i in 1:ncol(tripdata.df)){
 #Handling Missing Values
 tripdata.clean <- tripdata.df %>%
   select(-ehail_fee) %>%
-  mutate(trip_type = replace_na(trip_type, 1))
+    mutate(trip_type = replace_na(trip_type, 1))
 
-#Conversion of variables to numerics for use in model.
-tripdata.clean <- tripdata.clean %>%
+#Conversion of variables to numeric for use in model.
+tripdata.clean <- tripdata.df %>%
   mutate(fare_amount = gsub(",", "", fare_amount)) %>%
     mutate(total_amount = gsub(",", "", total_amount)) %>%
       mutate(fare_amount = as.numeric(fare_amount)) %>%
@@ -76,96 +101,131 @@ tripdata.clean <- tripdata.clean %>%
       mutate(lpep_pickup_datetime = as.POSIXct(lpep_pickup_datetime, format = "%m/%d/%Y %H:%M")) %>%
     mutate(lpep_dropoff_datetime = as.POSIXct(lpep_dropoff_datetime, format = "%m/%d/%Y %H:%M"))
 
-#Ensuring only dates from 2018
-tripdata.clean <- tripdata.clean %>%
-  filter(lpep_pickup_datetime < "1/1/2018" | lpep_dropoff_datetime > "5/1/2018")
 
-
-#Some continuous variables representing payment have negative values, which does not make sense.
-#These values are imputed back into the data set as their absolute value.
+#Ensuring only dates from 2018, passenger count is at least 1, and payment type 
 tripdata.clean <- tripdata.clean %>%
-  mutate(fare_amount = abs(fare_amount)) %>%
-    mutate(extra = abs(extra)) %>%
-      mutate(mta_tax = abs(mta_tax)) %>%
-        mutate(tip_amount = abs(tip_amount)) %>%
-      mutate(improvement_surcharge = abs(improvement_surcharge)) %>%
-    mutate(total_amount = abs(total_amount))
-  
+  filter(lpep_pickup_datetime < "1/1/2018" | lpep_dropoff_datetime > "5/1/2018") %>%
+    filter(passenger_count >= 1) %>%
+  filter(payment_type == 1)
+
 
 #RatecodeID has few values logged as 99, which are not present in the data dictionary.
 tripdata.clean <- tripdata.clean %>% filter(RatecodeID <= 6)
 
-  
-#Conversion of categorical variables to numeric dummy variables
-tripdata.clean$VendorID <- ifelse(tripdata.clean$VendorID == 2, 1, 0)
-tripdata.clean$store_and_fwd_flag <- ifelse(tripdata.clean$store_and_fwd_flag == "N", 0, 1)
+#Variable decoding
+tripdata.clean <- tripdata.clean %>%
+  mutate(across(c(VendorID,RatecodeID, payment_type, trip_type), as.factor))
 
+levels(tripdata.clean$RatecodeID) <- c("Standard Rate", "JFK", "Newark", "Nassau or Westchester", "Negociated Rate", 
+                                         "Group Ride", "NA")
+levels(tripdata.clean$payment_type) <- c("Credit Card", "Cash", "No charge", "Dispute", "Unknown")
+levels(tripdata.clean$VendorID) <- c("Creative Mobile Technologies", "VeriFone, INC")
+levels(tripdata.clean$trip_type) <- c("Street-hail", "Dispatch")
 
-#Distribution before outlier removal. For the love of god turn this into a function. 
-#Argument for variable name and argument for title / xlab.
+#Distribution before outlier removal.
 ggplot(data = tripdata.clean, mapping = aes(x = passenger_count)) +
-  geom_histogram(binwidth = 10, color = "black", fill = "lightblue") +
+  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
   labs(title = "Pre-Removal distribution of Passenger Count",
        caption = "2018 NYC Traffic data") +
+  xlab("Passenger Count") +
   theme_bw()
 
 ggplot(data = tripdata.clean, mapping = aes(x = trip_distance)) +
-  geom_histogram(binwidth = 10, color = "black", fill = "lightblue") +
+  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
   labs(title = "Pre-Removal Distribution of Trip Distance",
        caption = "2018 NYC Traffic data") +
+  xlab("Trip Distance") +
   theme_bw()
 
 ggplot(data = tripdata.clean, mapping = aes(x = fare_amount)) +
-  geom_histogram(binwidth = 10, color = "black", fill = "lightblue", stat = "count") +
+  geom_histogram(binwidth = 5, color = "black", fill = "lightblue") +
   labs(title = "Pre-Removal Distribution of Fare Amount",
        caption = "2018 NYC Traffic data") +
+  xlab("Fare Amount") +
+  xlim(0, 500) +
   theme_bw()
 
 ggplot(data = tripdata.clean, mapping = aes(x = tip_amount)) +
-  geom_histogram(binwidth = 10, color = "black", fill = "lightblue") +
+  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
   labs(title = "Pre-Removal Distribution of Tip Amount",
        caption = "2018 NYC Traffic data") +
+  xlab("Tip Amount") +
   theme_bw()
 
 ggplot(data = tripdata.clean, mapping = aes(x = tolls_amount)) +
   geom_histogram(binwidth = 10, color = "black", fill = "lightblue") +
   labs(title = "Pre-Removal Distribution of Tolls Amount",
        caption = "2018 NYC Traffic data") +
+  xlab("Tolls Amount") +
   theme_bw()
 
 ggplot(data = tripdata.clean, mapping = aes(x = total_amount)) +
-  geom_histogram(binwidth = 10, color = "black", fill = "lightblue", stat = "count") +
+  geom_histogram(binwidth = 10, color = "black", fill = "lightblue") +
+  xlim(0, 500) +
   labs(title = "Pre-Removal Distribution of Total Amount",
        caption = "2018 NYC Traffic data") +
+  xlab("Total Amount") +
   theme_bw()
+```
 
 
-#Outlier removal
+
+Question 1 & 2: Data Understanding / Data Preparation - Outliers & Outlier Handling
+
+For the development of this model, outlier values are defined as having a z-score of 3 or greater. The z-score for each
+data point was calculated and plotted below. During data preparation, values with z-scores above this value will be removed
+from the dataset.
+
+```{r}
 passenger.mean <- mean(tripdata.clean$passenger_count)
 passenger.sd <- sd(tripdata.clean$passenger_count)
 tripdata.clean$zpassenger_count <- abs((passenger.mean - tripdata.clean$passenger_count)/passenger.sd)
+
+ggplot(data = tripdata.clean, mapping = aes(y = passenger_count)) +
+  geom_boxplot() +
+  theme_bw()
+#----------------------------------------------------------------------------------------------------
 
 distance.mean <- mean(tripdata.clean$trip_distance)
 distance.sd <- sd(tripdata.clean$trip_distance)
 tripdata.clean$ztrip_distance <- abs((distance.mean - tripdata.clean$trip_distance)/distance.sd)
 
+ggplot(data = tripdata.clean, mapping = aes(y = trip_distance)) +
+  geom_boxplot()+
+  theme_bw()
+#----------------------------------------------------------------------------------------------------
+
 fare.mean <- mean(tripdata.clean$fare_amount)
 fare.sd <- sd(tripdata.clean$fare_amount)
 tripdata.clean$zfare_amount <- abs((fare.mean - tripdata.clean$fare_amount)/fare.sd)
 
+ggplot(data = tripdata.clean, mapping = aes(y = fare_amount)) +
+  geom_boxplot()+
+  theme_bw()
+#----------------------------------------------------------------------------------------------------
 tip.mean <- mean(tripdata.clean$tip_amount)
 tip.sd <- sd(tripdata.clean$tip_amount)
 tripdata.clean$ztip_amount <- abs((tip.mean - tripdata.clean$tip_amount)/tip.sd)
 
+ggplot(data = tripdata.clean, mapping = aes(y = tip_amount)) +
+  geom_boxplot()+
+  theme_bw()
+#----------------------------------------------------------------------------------------------------
 tolls.mean <- mean(tripdata.clean$tolls_amount)
 tolls.sd <- sd(tripdata.clean$tolls_amount)
 tripdata.clean$ztolls_amount <- abs((tolls.mean - tripdata.clean$tolls_amount)/tolls.sd)
 
+ggplot(data = tripdata.clean, mapping = aes(y = tolls_amount)) +
+  geom_boxplot()+
+  theme_bw()
+#----------------------------------------------------------------------------------------------------
 total.mean <- mean(tripdata.clean$total_amount)
 total.sd <- sd(tripdata.clean$total_amount)
 tripdata.clean$ztotal_amount <- abs((total.mean - tripdata.clean$total_amount)/total.sd)
 
-#This cuts out a ton of data. Bring up to group other ways of handling outliers. 
+ggplot(data = tripdata.clean, mapping = aes(y = total_amount)) +
+  geom_boxplot()+
+  theme_bw()
 
 tripdata.clean <- tripdata.clean %>%
   filter(zpassenger_count < 3) %>%
@@ -177,8 +237,14 @@ tripdata.clean <- tripdata.clean %>%
   select(!c(zpassenger_count, ztrip_distance, zfare_amount,
             ztip_amount, ztolls_amount, ztotal_amount))
 
+```
 
-#Distibutions after outlier removal
+
+After exclusion of missing values and outliers, the distribution of each variable is revisited before model creation.
+Although skew is still present, removal of the outliers has drastically improved the distribution of these features.
+
+```{R}
+#Distributions after outlier removal
 ggplot(data = tripdata.clean, mapping = aes(x = passenger_count)) +
   geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
   labs(title = "Post-Removal distribution of Passenger Count",
@@ -198,13 +264,13 @@ ggplot(data = tripdata.clean, mapping = aes(x = fare_amount)) +
   theme_bw()
 
 ggplot(data = tripdata.clean, mapping = aes(x = tip_amount)) +
-  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
+  geom_histogram(binwidth = 0.5, color = "black", fill = "lightblue") +
   labs(title = "Post-Removal Distribution of Tip Amount",
        caption = "2018 NYC Traffic data") +
   theme_bw()
 
 ggplot(data = tripdata.clean, mapping = aes(x = tolls_amount)) +
-  geom_histogram(binwidth = 0.1, color = "black", fill = "lightblue") +
+  geom_histogram(binwidth = 1, color = "black", fill = "lightblue") +
   labs(title = "Post-Removal Distribution of Tolls Amount",
        caption = "2018 NYC Traffic data") +
   scale_y_log10() +
@@ -217,107 +283,18 @@ ggplot(data = tripdata.clean, mapping = aes(x = total_amount)) +
   theme_bw()
 ```
 
-Trip type, Improvement surcharge, and MTA_tax are data-poor variables
-which shares covariance with many other variables within the data set.
-It additionally displays very little predicting power for tip
-amounts.For the purpose of modeling tip amounts, it would be more
-beneficial to remove this than it would be to keep it in.
-
-The variables trip distance and fare amount are also highly correlated
-with one another. Since trip distance displays a stronger correlation
-with tip amount than fare amount does, fare amount will be removed as a
-feature for purposes of modelling along with total amount, which
-according to the data dictionary should ideally be redundant with fare
-amount.
-
-```{R}
-#Identify correlations between variables 
-
-correlation.matrix <- cor(tripdata.clean[,c(1,4:18)])
-print(correlation.matrix)
-
-tripdata.model <- tripdata.clean %>%
-  select(-trip_type, -improvement_surcharge, -fare_amount, -total_amount, -mta_tax)
-
-model.correlation.matrix <- cor(tripdata.model[,c(1, 4:13)])
-print(model.correlation.matrix)
-```
-
-```{R}
-#Feature Selection: Lets do this once we get the model up and running.
-#Forwards stepwise model
-#Found all the ones that are not significant, but need to consider removed irrelevant columns. This will also reduce overfitting. 
-
-tip.model <- lm(formula = tip_amount ~ payment_type, data = tripdata.model)
-summary(tip.model)
 
 
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount, data = tripdata.model)
-summary(tip.model)
 
+Question 1: Data Understanding - Feature Engineering
 
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra, data = tripdata.model)
-summary(tip.model)
+Below we have used the datetime variables 'lpep_pickup_datetime' and 'lpep_dropoff_datetime' to calculate a novel variable
+'trip time', which measures the duration of each trip. This not only integrates unusual classes into a numeric class which can
+more easily be handled by the knn regression model and a weak positive correlation with tip amount, which will lend predicting strength to the model. 
 
+During variable creation, outlier values with z scores greater than 3 were removed.
 
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra+trip_distance, data = tripdata.model)
-summary(tip.model)
-
-
-#passenger_count does not contribute to improvement to R2 and is not significant. Therefore, it will be removed as a feature.
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra+trip_distance+passenger_count, data = tripdata.model)
-summary(tip.model)
-
-
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra+trip_distance+DOLocationID, data = tripdata.model)
-summary(tip.model)
-
-
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra+trip_distance+DOLocationID, data = tripdata.model)
-summary(tip.model)
-
-
-#Only minor improvement observed.
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra+trip_distance+DOLocationID+PULocationID,
-                 data = tripdata.model)
-summary(tip.model)
-
-
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra+trip_distance+DOLocationID+PULocationID+
-                  RatecodeID,data = tripdata.model)
-summary(tip.model)
-
-#No improvement made here.
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra+trip_distance+DOLocationID+PULocationID+
-                  RatecodeID+store_and_fwd_flag,data = tripdata.model)
-summary(tip.model)
-
-
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra+trip_distance+DOLocationID+PULocationID+
-                  RatecodeID+store_and_fwd_flag+lpep_dropoff_datetime,data = tripdata.model)
-summary(tip.model)
-
-
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra+trip_distance+DOLocationID+PULocationID+
-                  RatecodeID+store_and_fwd_flag+lpep_dropoff_datetime,data = tripdata.model)
-summary(tip.model)
-
-
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra+trip_distance+DOLocationID+PULocationID+
-                  RatecodeID+store_and_fwd_flag+lpep_dropoff_datetime+lpep_pickup_datetime,data = tripdata.model)
-summary(tip.model)
-
-
-tip.model <- lm(formula = tip_amount ~ payment_type+tolls_amount+extra+trip_distance+DOLocationID+PULocationID+
-                  RatecodeID+store_and_fwd_flag+lpep_dropoff_datetime+lpep_pickup_datetime+VendorID,data = tripdata.model)
-summary(tip.model)
-
-#avPlots(tip.model)
-```
-
-Feature Engineering
-
-```{R}
+```{r}
 #Feature Engineering: Trip Time
 tripdata.clean <- tripdata.clean %>%
   mutate(trip_time = lpep_dropoff_datetime - lpep_pickup_datetime) %>%
@@ -333,7 +310,7 @@ tripdata.clean <- tripdata.clean %>%
   select(-ztrip_time)
 
 ggplot(data = tripdata.clean, mapping = aes(x = trip_time)) +
-  geom_histogram(binwidth = 1/5, color = "black", fill = "lightblue") +
+  geom_histogram(binwidth = 0.2, color = "black", fill = "lightblue") +
   labs(title = "Distribution of Trip Time",
        caption = "2018 NYC Traffic data") +
   scale_x_log10() +
@@ -341,78 +318,119 @@ ggplot(data = tripdata.clean, mapping = aes(x = trip_time)) +
 
 time.cor <- cor(x = tripdata.clean$trip_time, y = tripdata.clean$tip_amount, method = "pearson")
 print(time.cor)
+
+#Feature engineering: Month, Day, Trip speed. (value per person)
+#Divide into morning noon, evening, night.
+
+tripdata.clean$passenger_value <- (tripdata.clean$total_amount / tripdata.clean$passenger_count)
+check.var <- dummyVars(~ passenger_count:total_amount, data = tripdata.clean)
+new.data <- as.data.frame(predict(check.var, newdata = tripdata.clean))
+
+
 ```
 
-Question 2: Data Preparation
 
-part 1: • Preprocess the data: handle missing data and outliers, perform
-any suitable data transformation steps, etc. Also, ensure that you
-filter the data. The goal is to predict the tip amount, therefore you
-need to ensure that you extract the data that contains this information.
-Hint: read the data dictionary.
+Question 2: Data Preparation - Data Encoding & Normalization
 
-Part 2: • Normalize the data: perform either max-min normalization or
-z-score standardization on the continuous variables/features.
-
-Min-max normalization is performed below. Pickup and dropoff times have
-been removed prior to normalization, and are represented by the feature
-"trip time" engineered above. This allow for trip time to be factored
-into the model while also converting the fields into a class which can
-be normalized and handled by the model.
-
-#We need to figure out what to do with PUlocationID and DOLocationID
+For use in the regression model, the variables VendorID, store_and_fwd_flag, and trip_type will be encoded 
+binomially where each option will be represented with either a 0 or 1. The variables RatecodeID and payment_type are encoded
+with one-hot encoding. Min-max normalization and one-hot Encoding is performed below:
 
 ```{r}
-process <- preProcess(as.data.frame(tripdata.model), method = c("range"))
-tripdata.model <- predict(process, as.data.frame(tripdata.model))
+#Data normalization 
+process <- preProcess(as.data.frame(tripdata.clean), method = c("range"))
+tripdata.clean <- predict(process, as.data.frame(tripdata.clean))
 
-summary(tripdata.model)
+#Data Encoding
+tripdata.clean$VendorID <- ifelse(tripdata.clean$VendorID == "Creative Mobile Technologies", 0, 1)
+tripdata.clean$store_and_fwd_flag <- ifelse(tripdata.clean$store_and_fwd_flag == "N", 0, 1)
+tripdata.clean$trip_type <- ifelse(tripdata.clean$trip_type == "Street-hail", 0, 1)
+
+dummy <- dummyVars(" ~ .", data = tripdata.clean)
+tripdata.clean <- data.frame(predict(dummy, newdata = tripdata.clean))
+
+initial.correlation.matrix <- cor(tripdata.clean)
+head(initial.correlation.matrix)
 ```
 
-Part 3: • Encode the data: determine if there are any categorical variables that
-need to be encoded and perform the encoding.
+The one-hot encoding technique results in many dummy variables with little to no variance. In order to properly evaluate each feature
+for model development, the caret package function nearZeroVar() was called to remove non-applicable features. Below is the correlation
+matrix of all remaining variables.
+
+The datetime class objects were removed, as the data in these variables is captured in the engineered variable "trip_time". 
+It can also be seen that the vast majority of RatecodeIDs belong to 'standard rate'. As this variable essentially functions as a 
+constant, it is also removed from the correlation analysis.
+
+```{R}
+near.zero <- nearZeroVar(tripdata.clean, names = TRUE)
+
+tripdata.clean <- tripdata.clean %>%
+  select(-near.zero) %>%
+  select(-lpep_pickup_datetime, -lpep_dropoff_datetime)
 
 
+summary(tripdata.clean)
+```
 
-#Decode the variable so we can re-encode using one-hot encoding. 
-#Do not need to worry about VendorID and store_and_fwd_flag since they are already binomial. Leave as is.
-#Also if we think about it, extra is basically a categorical variable. 
-```{r}
+With all of the features placed on a comparible 
 
-tripdata.model <- tripdata.model %>%
-  mutate(across(c(RatecodeID, payment_type), as.factor))
-levels(tripdata.model$RatecodeID) <- c("Standard Rate", "JFK", "Newark", "Nassau or Westchester", "Negociated Rate", 
-                                         "Group Ride", "NA")
-levels(tripdata.model$payment_type) <- c("Credit Card", "Cash", "No charge", "Dispute", "Unknown")
+```{R}
+#Identify correlations between variables 
+#Show RatecodeIDs
 
-dummy <- dummyVars(" ~ .", data = tripdata.model)
-tripdata.model <- data.frame(predict(dummy, newdata = tripdata.model))
+
+correlation.matrix <- cor(tripdata.clean)
+print(correlation.matrix)
+
+#Justification for dropping 
+print(table(tripdata.clean$RatecodeID.Standard.Rate))
+```
+
+Question 1 / Question 2: Data Understanding / Data Preparation -  Feature Selection 
+
+```{R}
+tripdata.clean
+
+tip.model <- lm(formula = tip_amount ~ total_amount, data = tripdata.clean)
+summary(tip.model)
+
+tip.model <- lm(formula = tip_amount ~ total_amount+trip_time, data = tripdata.clean)
+summary(tip.model)
+
+tip.model <- lm(formula = tip_amount ~ total_amount+trip_time+trip_distance, data = tripdata.clean)
+summary(tip.model)
+
+#DOLocationID insignificant
+tip.model <- lm(formula = tip_amount ~ total_amount+trip_time+trip_distance+DOLocationID, data = tripdata.clean)
+summary(tip.model)
+
+tip.model <- lm(formula = tip_amount ~ total_amount+trip_time+trip_distance+PULocationID, data = tripdata.clean)
+summary(tip.model)
+
+tripdata.clean <- tripdata.clean %>%
+  select(total_amount, trip_time, trip_distance, PULocationID, tip_amount)
 
 ```
 
 
+Question 2: Data Preparation - Modeling Preparation
 
-
-Part 4: • Prepare the data for modeling: shuffle the data and split it
-into training and test sets. The percent split between the training and
-test set is your decision. However, clearly indicate the reason.
-
-Initial testing will be performed with an 80:20 split between training
-and testing data.
+Data is randomly and proportionally split below on a 80:20 split ratio, where 80% of the tidied and filtered data is devoted to the 
+training data set, while 20% of the data is devoted to the validation data set. 
 
 ```{r}
 set.seed(784)
 
-sample <- sample.split(tripdata.model$tip_amount, SplitRatio = 0.8)
-training.data <- subset(tripdata.model, sample == TRUE)
-testing.data <- subset(tripdata.model, sample == FALSE)
+sample <- sample.split(tripdata.clean$tip_amount, SplitRatio = 0.8)
+training.data <- subset(tripdata.clean, sample == TRUE)
+testing.data <- subset(tripdata.clean, sample == FALSE)
 ```
 
-Question 3: • In this step you will develop the k-nn regression model.
-Create a function with the following name and arguments:
-knn.predict(data_train, data_test, k);
+
+
 
 #You think we should manually calculate RMSE?
+#MSE and MAE
 ```{r}
 #Use regression model to predict 
 
@@ -445,19 +463,15 @@ pred <- knn.predict(training.data, testing.data, 3)
 Question 4: • Provide at least 20 different values of k to the knn.predict() function (along with the training set 
 and the test set)
 
-#Weird bug where I cannot submit a k-value of 2.
+
 ```{r}
-k.range <- c(3:23)
+k.range <- seq(29, 49, by = 2)
 
-
-for(i in k.range){
- k.value <- knn.predict(training.data, testing.data, k = i)
- k.pred <- c(k.pred, k.value)
+for(k in k.range){
+ k.value <- c(k.value, knn.predict(training.data, testing.data, k))
 }
 
-knn.model <- data.frame(k.range, k.pred)
-glimpse(knn.model)
-
+knn.df <- data.frame(k.range, k.value)
 ```
 
 
