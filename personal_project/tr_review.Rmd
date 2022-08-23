@@ -1,0 +1,46 @@
+---
+title: "Tech Review Review"
+output: html_notebook
+---
+
+1: Business Understanding:
+
+1.1: Business Objectives
+  -Provide summary statistics for tech reviewers.
+  -Provide leveled list of which tech reviewers reviews the highest quantity, and how harshly.
+  
+
+1.2: Assess Situation
+  -.csv file with multiple tabs supplied.
+  -No computational resources provided.
+  -No paid time for project provided. 
+  -Minimal requirements/deliverables provided for the project.
+  -Possibly results in metric rankings that would bias evaluation of analysts or tech reviewers. Primary risk.
+
+
+1.3: Data Mining Goals
+  Success here will look like an even evaluation of each tech reviewer with appropriate weighting
+  applied to distinguish method evaluations, validations, and routine testing to properly review tech
+  reviewer productivity. Weighting will also be applied to the "C1 - C7" encoded variables which encode
+  for quality errors. 
+  
+
+2: Data Understanding:
+
+```{r}
+#Import Data
+library(tidyverse)
+library(moderndive)
+library(readxl)
+
+tr.df <- excel_sheets("C:/Users/mastl/Desktop/Grad_School/2021_tr.xlsx")
+tibble <- lapply(tr.df, function(x) readxl::read_excel("C:/Users/mastl/Desktop/Grad_School/2021_tr.xlsx", sheet = x))
+data.frame <- lapply(tibble, as.data.frame)
+
+names(data.frame) <- tr.df
+print(data.frame)
+
+
+
+```
+
