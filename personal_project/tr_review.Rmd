@@ -25,22 +25,51 @@ output: html_notebook
   for quality errors. 
   
 
-2: Data Understanding:
+2: Data Understanding: 
 
+  2.1: Describe Data
+
+#tr.chris is completely empty
+#tr.jeff having trouble importing
 ```{r}
 #Import Data
 library(tidyverse)
 library(moderndive)
 library(readxl)
 
+filepath <- "C:/Users/mastl/Desktop/Grad_School/2021_tr.xlsx"
+
 tr.df <- excel_sheets("C:/Users/mastl/Desktop/Grad_School/2021_tr.xlsx")
-tibble <- lapply(tr.df, function(x) readxl::read_excel("C:/Users/mastl/Desktop/Grad_School/2021_tr.xlsx", sheet = x))
-data.frame <- lapply(tibble, as.data.frame)
-
-names(data.frame) <- tr.df
-print(data.frame)
 
 
+#tr.jeff <- read_xlsx(filepath, sheet = "Jeff B", skip = 8)
+tr.hans <- read_xlsx(filepath, sheet = "Hans H", skip = 8)
+tr.vir <- read_xlsx(filepath, sheet = "Vir P", skip = 8)
+tr.kim <- read_xlsx(filepath, sheet = "Kim J", skip = 8)
+tr.dolly <- read_xlsx(filepath, sheet = "Dolly W", skip = 8)
+tr.clester <- read_xlsx(filepath, sheet = "Clester O", skip = 8)
+tr.michael <- read_xlsx(filepath, sheet = "Michael K", skip = 8)
+tr.chris <- read_xlsx(filepath, sheet = "Chris S", skip = 8)
+tr.sarah <- read_xlsx(filepath, sheet = "Sarah C", skip = 8)
+tr.dennis <- read_xlsx(filepath, sheet = "Dennis W", skip = 8)
+tr.kelly <- read_xlsx(filepath, sheet = "Kelly L", skip = 8)
+
+tr.reviewers <- list("hans" = tr.hans, 
+                     "vir" =tr.vir, 
+                     "kim" = tr.kim, 
+                     "dolly" = tr.dolly, 
+                     "clester" = tr.clester,
+                     "michael" = tr.michael, 
+                     "chris" = tr.chris, 
+                     "sarah" = tr.sarah, 
+                     "dennis" = tr.dennis, 
+                     "kelly" = tr.kelly)
+
+for(i in 1:10) {
+  names(tr.reviewers[i])
+  summary(tr.reviewers[[i]])
+  dim(tr.reviewers[[i]])
+}
 
 ```
 
