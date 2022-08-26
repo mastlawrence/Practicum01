@@ -28,7 +28,29 @@ output: html_notebook
 2: Data Understanding: 
 
   2.1: Describe Data
-
+  Dates are imported appropriately, everything else is a character class. Drop all columns including and after comments.
+  Hans BY FAR makes up the majority of the data set. More than double. Followed by Dolly and Vir. Chris's data is completely missing,
+  and will be removed from analysis.
+  
+  Kelly has reviewed an unusually high number of projects given her start date. Order goes Hans <- Vir <- Dolly <- Dennis <- Kelly.
+  Differing number of variables in each sheet, and need to be normalized.
+ 
+ 
+  2.2: Explore Data
+  
+  We really need to find a primary key or make one, or find some way to join tables.
+  Lets also plan to drop NA values that do not have analyst name observations attached to.
+  
+  Hans reviews Lauren's projects the most.
+  Vir reviewed Katie's projects the most. 
+  Kim reviews Hillary's projects the most.
+  Dolly reviews David M's projects the most, but very evenly reviews across the entire department.
+  Clester reviews Katie's projects the most. 
+  Michael reviews Alexander's projects the most. Possibly drop Michael from data set as not applicable to analytical services.
+  Sarah reviews Hillary's projects the most.
+  Dennis reviewed Yesenia's projects the most, and also Caterine's. But now Edmond is #1 of people still at Cambrex.
+  Kelly reviews Doug's projects the most of analytical services.
+  
 #tr.chris is completely empty
 #tr.jeff having trouble importing
 ```{r}
@@ -59,17 +81,61 @@ tr.reviewers <- list("hans" = tr.hans,
                      "kim" = tr.kim, 
                      "dolly" = tr.dolly, 
                      "clester" = tr.clester,
-                     "michael" = tr.michael, 
-                     "chris" = tr.chris, 
+                     "michael" = tr.michael,
                      "sarah" = tr.sarah, 
                      "dennis" = tr.dennis, 
                      "kelly" = tr.kelly)
 
-for(i in 1:10) {
-  names(tr.reviewers[i])
-  summary(tr.reviewers[[i]])
-  dim(tr.reviewers[[i]])
-}
+for(i in 1:9) {
+n <-  names(tr.reviewers[i])
+s <-  summary(tr.reviewers[[i]])
+d <-  dim(tr.reviewers[[i]])
 
+print(n)
+print(s)
+print(d)
+}
 ```
+
+
+#Summarizes how many times a tech reviewer has reviewed each analyst.
+
+```{R}
+for(i in 1:9) {
+  n <- names(tr.reviewers[i])
+  a <- table(tr.reviewers[[i]]$Analyst)
+  a.df <- as.data.frame(a)
+  a.df <- a.df %>% 
+    arrange(desc(Freq)) %>%
+    mutate(Var1 = tolower(Var1))
+  
+    
+  print(n)
+  print(a.df)
+  
+plot <- ggplot(data = a.df, mapping = aes(reorder(x = Var1, desc(Freq)), y = Freq)) +
+    geom_col(color = "black", fill = "cadetblue3") + 
+    labs(
+      title = paste0("Distribution of ", n, "'s reviews"),
+      caption = "Source: Tech Review .xlsx file"
+    ) +
+    xlab("Analyst") +
+    ylab("Review Count") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 7))
+
+print(plot)
+}
+```
+
+3: Data Preparation
+
+  3.1: Select Data: Let's remove observations without analyst names, and then maybe a full join and make the TR a variable?
+       Or we can just make new data frames for everything we want to do.
+
+
+
+
+
+
 
