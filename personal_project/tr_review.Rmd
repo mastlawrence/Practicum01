@@ -130,11 +130,46 @@ print(plot)
 
 3: Data Preparation
 
-  3.1: Select Data: Let's remove observations without analyst names, and then maybe a full join and make the TR a variable?
-       Or we can just make new data frames for everything we want to do.
+  3.1: Select Data
+  
+  Todd wants us to grab everything, so lets select all of variables except for comments. Dropping closed date for now due to 
+  missing values and inconsistency. Come back and try to repair it.
+  
+  Variables for different types of QA findings are decoded below. Other columns are renamed to be more usable.
+  
+```{r}
+
+var.decode <- function(tr.dataframe) {
+  tr.dataframe <- tr.dataframe %>%
+    select(`Start Date`, Project, `Project Description`, Analyst, `Test Type`,
+          C1, C2, C3, C4, C5, C6, C7, RFT, `>2X`, `Sample IDs`, Comments) %>%
+  
+  rename("start_date" = `Start Date`, 
+         "project_description" = `Project Description`,
+         "test_type" = `Test Type`, 
+         "missed_QEM" = C1, 
+         "incorrect_result_reported" = C2,
+         "reprocessing_Integration" = C3,
+         "reprocessing_calculation" = C4,
+         "LIMS_incompletation" = C5, 
+         "GDP_misses" = C6,
+         "missing_client_documentation" = C7,
+         "back_and_forth" = `>2X`, 
+         "sample_ID" = `Sample IDs`)
+  
+  return(tr.dataframe)
+}
+
+for(i in 1:length(tr.reviewers)){
+  print(names(tr.reviewers[i]))
+  tr.reviewers[[i]] <- var.decode(tr.reviewers[[i]])
+}
+
+tr.reviewers$dolly <- tr.reviewers$dolly %>%
+  fill(c(start_date, Project, Analyst, test_type), .direction = c("down"))
 
 
-
+```
 
 
 
