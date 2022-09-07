@@ -135,7 +135,7 @@ print(plot)
   Todd wants us to grab everything, so lets select all of variables except for comments. Dropping closed date for now due to 
   missing values and inconsistency. Come back and try to repair it.
   
-  Variables for different types of QA findings are decoded below. Other columns are renamed to be more usable.
+  Variables for different types of QA findings are decoded below. Other columns are renamed to be more usable. 
   
 ```{r}
 
@@ -165,11 +165,43 @@ for(i in 1:length(tr.reviewers)){
   tr.reviewers[[i]] <- var.decode(tr.reviewers[[i]])
 }
 
-tr.reviewers$dolly <- tr.reviewers$dolly %>%
-  fill(c(start_date, Project, Analyst, test_type), .direction = c("down"))
+hans <- as.data.frame(tr.reviewers$hans)
+vir <- as.data.frame(tr.reviewers$vir)
+kim <- as.data.frame(tr.reviewers$kim)
+dolly <- as.data.frame(tr.reviewers$dolly)
+clester <- as.data.frame(tr.reviewers$clester)
+michael <- as.data.frame(tr.reviewers$michael)
+sarah <- as.data.frame(tr.reviewers$sarah)
+dennis <- as.data.frame(tr.reviewers$dennis)
+kelly <- as.data.frame(tr.reviewers$kelly)
+```
 
+
+  3.2: Clean Data
+  
+  Kim and Dolly both have projects where the data entered for the first test is assumed to apply to the consecutive tests. This is
+  corrected by applying a fill to the columns where this occurs. The goal of this step is to associate all testing with the analyst
+  who performed it. Since QEMs are assigned per test, this will provide more accurate first-time-correct statistics for each analyst.
+  
+  Clester has a few rows with an empty analyst field. These observations will not aid us in analyzing QEMs per analyst, so these
+  rows will be dropped from analysis.
+
+```{R}
+kim <- kim %>%
+  fill(c(start_date, Project, project_description, Analyst, test_type), .direction = c("down"))
+
+dolly <- dolly %>%
+  fill(c(start_date, Project, Analyst, test_type), .direction = c("down")) %>%
+    filter(Analyst != is.na(Analyst))
+
+clester <- clester %>%
+  filter(Analyst != is.na(Analyst))
+
+michael <- michael %>%
+  filter(Analyst != is.na(Analyst))
 
 ```
+
 
 
 
