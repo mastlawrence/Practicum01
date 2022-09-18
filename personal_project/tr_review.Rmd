@@ -311,13 +311,70 @@ kelly[is.na(kelly)] = 0
   kelly$back_and_forth <- ifelse(kelly$back_and_forth != 0, 1, 0)
 ```
 
-  3.3: Construct Data
 
-  Data construct: RFT Rate. The RFT rate of each tech reviewer will be calculated below.
+Create a new data frame which groups various quality events by analyst to prepare for modeling.
 
 ```{r}
-
+hans_QEM <- hans %>%
+  group_by(Analyst) %>%
+    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
+              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
+              sum(missing_client_documentation))
+#---------------------------------------------------------------------------------------------
+vir_QEM <- vir %>%
+  group_by(Analyst) %>%
+    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
+              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
+              sum(missing_client_documentation))
+#---------------------------------------------------------------------------------------------
+kim_QEM <- kim %>%
+  group_by(Analyst) %>%
+    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
+              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
+              sum(missing_client_documentation))
+#---------------------------------------------------------------------------------------------
+dolly_QEM <- dolly %>%
+  group_by(Analyst) %>%
+    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
+              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
+              sum(missing_client_documentation))
+#---------------------------------------------------------------------------------------------
+clester_QEM <- clester %>%
+  group_by(Analyst) %>%
+    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
+              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
+              sum(missing_client_documentation))
+#---------------------------------------------------------------------------------------------
+michael_QEM <- michael %>%
+  group_by(Analyst) %>%
+    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
+              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
+              sum(missing_client_documentation))
+#---------------------------------------------------------------------------------------------
+sarah_QEM <- sarah %>%
+  group_by(Analyst) %>%
+    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
+              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
+              sum(missing_client_documentation))
+#---------------------------------------------------------------------------------------------
+dennis_QEM <- dennis %>%
+  group_by(Analyst) %>%
+    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
+              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
+              sum(missing_client_documentation))
+#---------------------------------------------------------------------------------------------
+kelly_QEM <- kelly %>%
+  group_by(Analyst) %>%
+    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
+              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
+              sum(missing_client_documentation))
 ```
 
+  Prepare bar charts which show number of GDP misses per analyst per tech reviewers.
+  
+```{r}
+#Hans
+ggplot(data = hans_QEM, mapping = aes())
+```
 
 
