@@ -109,7 +109,6 @@ for(i in 1:9) {
     arrange(desc(Freq)) %>%
     mutate(Var1 = tolower(Var1))
   
-    
   print(n)
   print(a.df)
   
@@ -122,7 +121,7 @@ plot <- ggplot(data = a.df, mapping = aes(reorder(x = Var1, desc(Freq)), y = Fre
     xlab("Analyst") +
     ylab("Review Count") +
     theme_bw() +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 7))
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 9))
 
 print(plot)
 }
@@ -185,6 +184,8 @@ kelly <- as.data.frame(tr.reviewers$kelly)
   
   Clester has a few rows with an empty analyst field. These observations will not aid us in analyzing QEMs per analyst, so these
   rows will be dropped from analysis.
+  
+  All tech reviewers were re-listed, and the function "QEM.Encode()" was written to address N/A values 
 
 ```{R}
 kim <- kim %>%
@@ -208,173 +209,139 @@ kelly <- kelly %>%
   filter(Analyst != is.na(Analyst)) 
 ```
 
-#Encode QEMs as 0 or 1 to quantify assignment of QEMs to analysts.
+
+Re-list all tech reviewers, and encode each correction in order to produce summary statistics. 
+List is named 'tr.reviewers' and the function used to encode variables is named "QEM.Encode()"
 
 ```{r}
-hans[is.na(hans)] = 0
-  hans$missed_QEM <- ifelse(hans$missed_QEM != 0, 1, 0)
-    hans$incorrect_result_reported <- ifelse(hans$incorrect_result_reported != 0, 1, 0)
-      hans$reprocessing_Integration <- ifelse(hans$reprocessing_Integration != 0, 1, 0)
-        hans$reprocessing_calculation <- ifelse(hans$reprocessing_calculation != 0, 1, 0)
-          hans$LIMS_incompletation <- ifelse(hans$LIMS_incompletation != 0, 1, 0)
-        hans$GDP_misses <- ifelse(hans$GDP_misses != 0, 1, 0)
-      hans$missing_client_documentation <- ifelse(hans$missing_client_documentation != 0, 1, 0)
-    hans$RFT <- ifelse(hans$RFT != 0, 1, 0)
-  hans$back_and_forth <- ifelse(hans$back_and_forth != 0, 1, 0)
-#----------------------------------------------------------------------------------------------  
-vir[is.na(vir)] = 0
-  vir$missed_QEM <- ifelse(vir$missed_QEM != 0, 1, 0)
-    vir$incorrect_result_reported <- ifelse(vir$incorrect_result_reported != 0, 1, 0)
-      vir$reprocessing_Integration <- ifelse(vir$reprocessing_Integration != 0, 1, 0)
-        vir$reprocessing_calculation <- ifelse(vir$reprocessing_calculation != 0, 1, 0)
-          vir$LIMS_incompletation <- ifelse(vir$LIMS_incompletation != 0, 1, 0)
-        vir$GDP_misses <- ifelse(vir$GDP_misses != 0, 1, 0)
-      vir$missing_client_documentation <- ifelse(vir$missing_client_documentation != 0, 1, 0)
-    vir$RFT <- ifelse(vir$RFT != 0, 1, 0)
-  vir$back_and_forth <- ifelse(vir$back_and_forth != 0, 1, 0)
-#----------------------------------------------------------------------------------------------  
-kim[is.na(kim)] = 0
-  kim$missed_QEM <- ifelse(kim$missed_QEM != 0, 1, 0)
-    kim$incorrect_result_reported <- ifelse(kim$incorrect_result_reported != 0, 1, 0)
-      kim$reprocessing_Integration <- ifelse(kim$reprocessing_Integration != 0, 1, 0)
-        kim$reprocessing_calculation <- ifelse(kim$reprocessing_calculation != 0, 1, 0)
-          kim$LIMS_incompletation <- ifelse(kim$LIMS_incompletation != 0, 1, 0)
-        kim$GDP_misses <- ifelse(kim$GDP_misses != 0, 1, 0)
-      kim$missing_client_documentation <- ifelse(kim$missing_client_documentation != 0, 1, 0)
-    kim$RFT <- ifelse(kim$RFT != 0, 1, 0)
-  kim$back_and_forth <- ifelse(kim$back_and_forth != 0, 1, 0)
-#----------------------------------------------------------------------------------------------  
-dolly[is.na(dolly)] = 0
-  dolly$missed_QEM <- ifelse(dolly$missed_QEM != 0, 1, 0)
-    dolly$incorrect_result_reported <- ifelse(dolly$incorrect_result_reported != 0, 1, 0)
-      dolly$reprocessing_Integration <- ifelse(dolly$reprocessing_Integration != 0, 1, 0)
-        dolly$reprocessing_calculation <- ifelse(dolly$reprocessing_calculation != 0, 1, 0)
-          dolly$LIMS_incompletation <- ifelse(dolly$LIMS_incompletation != 0, 1, 0)
-        dolly$GDP_misses <- ifelse(dolly$GDP_misses != 0, 1, 0)
-      dolly$missing_client_documentation <- ifelse(dolly$missing_client_documentation != 0, 1, 0)
-    dolly$RFT <- ifelse(dolly$RFT != 0, 1, 0)
-  dolly$back_and_forth <- ifelse(dolly$back_and_forth != 0, 1, 0)
-#----------------------------------------------------------------------------------------------
-clester[is.na(clester)] = 0
-  clester$missed_QEM <- ifelse(clester$missed_QEM != 0, 1, 0)
-    clester$incorrect_result_reported <- ifelse(clester$incorrect_result_reported != 0, 1, 0)
-      clester$reprocessing_Integration <- ifelse(clester$reprocessing_Integration != 0, 1, 0)
-        clester$reprocessing_calculation <- ifelse(clester$reprocessing_calculation != 0, 1, 0)
-          clester$LIMS_incompletation <- ifelse(clester$LIMS_incompletation != 0, 1, 0)
-        clester$GDP_misses <- ifelse(clester$GDP_misses != 0, 1, 0)
-      clester$missing_client_documentation <- ifelse(clester$missing_client_documentation != 0, 1, 0)
-    clester$RFT <- ifelse(clester$RFT != 0, 1, 0)
-  clester$back_and_forth <- ifelse(clester$back_and_forth != 0, 1, 0)
-#----------------------------------------------------------------------------------------------
-michael[is.na(michael)] = 0
-  michael$missed_QEM <- ifelse(michael$missed_QEM != 0, 1, 0)
-    michael$incorrect_result_reported <- ifelse(michael$incorrect_result_reported != 0, 1, 0)
-      michael$reprocessing_Integration <- ifelse(michael$reprocessing_Integration != 0, 1, 0)
-        michael$reprocessing_calculation <- ifelse(michael$reprocessing_calculation != 0, 1, 0)
-          michael$LIMS_incompletation <- ifelse(michael$LIMS_incompletation != 0, 1, 0)
-        michael$GDP_misses <- ifelse(michael$GDP_misses != 0, 1, 0)
-      michael$missing_client_documentation <- ifelse(michael$missing_client_documentation != 0, 1, 0)
-    michael$RFT <- ifelse(michael$RFT != 0, 1, 0)
-  michael$back_and_forth <- ifelse(michael$back_and_forth != 0, 1, 0)
-#----------------------------------------------------------------------------------------------
-sarah[is.na(sarah)] = 0
-  sarah$missed_QEM <- ifelse(sarah$missed_QEM != 0, 1, 0)
-    sarah$incorrect_result_reported <- ifelse(sarah$incorrect_result_reported != 0, 1, 0)
-      sarah$reprocessing_Integration <- ifelse(sarah$reprocessing_Integration != 0, 1, 0)
-        sarah$reprocessing_calculation <- ifelse(sarah$reprocessing_calculation != 0, 1, 0)
-          sarah$LIMS_incompletation <- ifelse(sarah$LIMS_incompletation != 0, 1, 0)
-        sarah$GDP_misses <- ifelse(sarah$GDP_misses != 0, 1, 0)
-      sarah$missing_client_documentation <- ifelse(sarah$missing_client_documentation != 0, 1, 0)
-    sarah$RFT <- ifelse(sarah$RFT != 0, 1, 0)
-  sarah$back_and_forth <- ifelse(sarah$back_and_forth != 0, 1, 0) 
-#----------------------------------------------------------------------------------------------
-dennis[is.na(dennis)] = 0
-  dennis$missed_QEM <- ifelse(dennis$missed_QEM != 0, 1, 0)
-    dennis$incorrect_result_reported <- ifelse(dennis$incorrect_result_reported != 0, 1, 0)
-      dennis$reprocessing_Integration <- ifelse(dennis$reprocessing_Integration != 0, 1, 0)
-        dennis$reprocessing_calculation <- ifelse(dennis$reprocessing_calculation != 0, 1, 0)
-          dennis$LIMS_incompletation <- ifelse(dennis$LIMS_incompletation != 0, 1, 0)
-        dennis$GDP_misses <- ifelse(dennis$GDP_misses != 0, 1, 0)
-      dennis$missing_client_documentation <- ifelse(dennis$missing_client_documentation != 0, 1, 0)
-    dennis$RFT <- ifelse(dennis$RFT != 0, 1, 0)
-  dennis$back_and_forth <- ifelse(dennis$back_and_forth != 0, 1, 0)
-#----------------------------------------------------------------------------------------------
-kelly[is.na(kelly)] = 0
-  kelly$missed_QEM <- ifelse(kelly$missed_QEM != 0, 1, 0)
-    kelly$incorrect_result_reported <- ifelse(kelly$incorrect_result_reported != 0, 1, 0)
-      kelly$reprocessing_Integration <- ifelse(kelly$reprocessing_Integration != 0, 1, 0)
-        kelly$reprocessing_calculation <- ifelse(kelly$reprocessing_calculation != 0, 1, 0)
-          kelly$LIMS_incompletation <- ifelse(kelly$LIMS_incompletation != 0, 1, 0)
-        kelly$GDP_misses <- ifelse(kelly$GDP_misses != 0, 1, 0)
-      kelly$missing_client_documentation <- ifelse(kelly$missing_client_documentation != 0, 1, 0)
-    kelly$RFT <- ifelse(kelly$RFT != 0, 1, 0)
-  kelly$back_and_forth <- ifelse(kelly$back_and_forth != 0, 1, 0)
+QEM.Encode <- function(df){
+  
+df[is.na(df)] = 0
+  df[,6] <- ifelse(df[,6] != 0, 1, 0)
+  df[,7] <- ifelse(df[,7] != 0, 1, 0)
+  df[,8] <- ifelse(df[,8] != 0, 1, 0)
+  df[,9] <- ifelse(df[,9] != 0, 1, 0)
+  df[,10] <- ifelse(df[,10] != 0, 1, 0)
+  df[,11] <- ifelse(df[,11] != 0, 1, 0)
+  df[,12] <- ifelse(df[,12] != 0, 1, 0)
+  df[,13] <- ifelse(df[,13] != 0, 1, 0)
+  df[,14] <- ifelse(df[,14] != 0, 1, 0)
+  
+  return(df)
+}
+
+tr.reviewers <- list("Hans" = hans, 
+                     "Vir" =vir, 
+                     "Kim" = kim, 
+                     "Dolly" = dolly, 
+                     "Clester" = clester,
+                     "Michael" = michael,
+                     "Sarah" = sarah, 
+                     "Dennis" = dennis, 
+                     "Kelly" = kelly)
+
+for(i in 1:length(tr.reviewers)){
+  tr.reviewers[[i]] <- QEM.Encode(tr.reviewers[[i]])
+}
+
 ```
 
-
-Create a new data frame which groups various quality events by analyst to prepare for modeling.
+  3.3: Construct Data
+  
+  As per the business objective provided, new summary statistics will be added to each dataframe that describe the rate at which each 
+  tech reviewer assigns corrections and Right-First-Time assignments.
 
 ```{r}
-hans_QEM <- hans %>%
-  group_by(Analyst) %>%
-    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
-              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
-              sum(missing_client_documentation))
-#---------------------------------------------------------------------------------------------
-vir_QEM <- vir %>%
-  group_by(Analyst) %>%
-    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
-              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
-              sum(missing_client_documentation))
-#---------------------------------------------------------------------------------------------
-kim_QEM <- kim %>%
-  group_by(Analyst) %>%
-    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
-              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
-              sum(missing_client_documentation))
-#---------------------------------------------------------------------------------------------
-dolly_QEM <- dolly %>%
-  group_by(Analyst) %>%
-    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
-              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
-              sum(missing_client_documentation))
-#---------------------------------------------------------------------------------------------
-clester_QEM <- clester %>%
-  group_by(Analyst) %>%
-    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
-              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
-              sum(missing_client_documentation))
-#---------------------------------------------------------------------------------------------
-michael_QEM <- michael %>%
-  group_by(Analyst) %>%
-    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
-              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
-              sum(missing_client_documentation))
-#---------------------------------------------------------------------------------------------
-sarah_QEM <- sarah %>%
-  group_by(Analyst) %>%
-    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
-              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
-              sum(missing_client_documentation))
-#---------------------------------------------------------------------------------------------
-dennis_QEM <- dennis %>%
-  group_by(Analyst) %>%
-    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
-              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
-              sum(missing_client_documentation))
-#---------------------------------------------------------------------------------------------
-kelly_QEM <- kelly %>%
-  group_by(Analyst) %>%
-    summarise(sum(missed_QEM), sum(incorrect_result_reported), sum(reprocessing_Integration),
-              sum(reprocessing_calculation), sum(LIMS_incompletation), sum(GDP_misses), 
-              sum(missing_client_documentation))
+correction.summary <- function(df) {
+  
+  summary_df <- df %>%
+    mutate(missed_QEM_rate = sum(df[,6]) / nrow(df) * 100) %>%
+    mutate(incorrect_result_reported_rate = sum(df[,7]) / nrow(df) * 100) %>%
+    mutate(reprocessing_integration_rate = sum(df[,8]) / nrow(df) * 100) %>%
+    mutate(reprocessing_calculation_rate = sum(df[,9]) / nrow(df) * 100) %>%
+    mutate(LIMS_incompletion_rate = sum(df[,10]) / nrow(df) * 100) %>%
+    mutate(GDP_misses_rate = sum(df[,11]) / nrow(df) * 100) %>%
+    mutate(missing_client_documentation_rate = sum(df[,12]) / nrow(df) * 100) %>%
+    mutate(RFT_rate = sum(df[,13]) / nrow(df) * 100)
+  
+  return(summary_df)
+}
+
+for(i in 1:length(tr.reviewers)){
+  tr.reviewers[[i]] <- correction.summary(tr.reviewers[[i]])
+}
 ```
 
-  Prepare bar charts which show number of GDP misses per analyst per tech reviewers.
+  
+  3.4: Integrate Data
+  
+  At this point, our business objective is to analyze the correction rate of each reviewer. Each reviewer is represented within the 
+  list tr.reviewers, and each tech reviewer has reviewed a different number of projects. There is no need for integration of data 
+  at this point.
+  
+  
+  3.5: Format Data
+  
+  Data formatting was performed by summarizing the entire data set by the constructed data created in step 3.3.
   
 ```{r}
-#Hans
-ggplot(data = hans_QEM, mapping = aes())
+
+format.data <- function(df){
+  format_data <- df %>%
+    
+    select(missed_QEM_rate, incorrect_result_reported_rate, reprocessing_integration_rate,
+           reprocessing_calculation_rate, LIMS_incompletion_rate, GDP_misses_rate,
+           missing_client_documentation_rate) %>%
+    
+    summarise(mean(missed_QEM_rate), mean(incorrect_result_reported_rate), mean(reprocessing_integration_rate),
+              mean(reprocessing_calculation_rate), mean(LIMS_incompletion_rate), mean(GDP_misses_rate),
+              mean(missing_client_documentation_rate)) %>%
+  
+    rename(missed_QEM_rate = `mean(missed_QEM_rate)`, incorrect_result_reported_rate = `mean(incorrect_result_reported_rate)`,
+           reprocessing_integration_rate = `mean(reprocessing_integration_rate)`, 
+           reprocessing_calculation_rate = `mean(reprocessing_calculation_rate)`, 
+           LIMS_incompletion_rate = `mean(LIMS_incompletion_rate)`, GDP_misses_rate = `mean(GDP_misses_rate)`,
+           missing_client_documentation_rate = `mean(missing_client_documentation_rate)`)
+  
+  return(format_data)
+}
+
+for(i in 1:length(tr.reviewers)){
+  tr.reviewers[[i]] <- format.data(tr.reviewers[[i]])
+}
+
 ```
+  
+  
+  Data Visualization:
+  
+```{r}
 
+plot.data <- function(df, plot_title){
+  df <- df %>%
+    pivot_longer(cols = everything()) %>%
+    print()
+  
+  plot_data <- ggplot(data = df, mapping = aes(reorder(x = name, desc(value)), y = value)) +
+    geom_col(fill = "deepskyblue2") +
+    labs(
+      title = paste(plot_title, "Correction Rates"),
+      caption = "source: TR Excel File"
+    ) +
+    xlab("Correction Type") +
+    ylab("Correction Issuance Rate") +
+    theme_bw() +
+    theme(axis.text.x.bottom = element_text(size = 8)) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  
+  return(plot_data)
+}
 
+for(i in 1:length(tr.reviewers)){
+  x <- plot.data(tr.reviewers[[i]], names(tr.reviewers[i]))
+  print(x)
+}
+```
+  
+  
+  
