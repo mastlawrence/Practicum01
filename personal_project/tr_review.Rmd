@@ -1,6 +1,6 @@
 ---
 title: "Tech Review Review"
-output: html_notebook
+output: github_document
 ---
 
 1: Business Understanding:
@@ -90,10 +90,6 @@ for(i in 1:9) {
 n <-  names(tr.reviewers[i])
 s <-  summary(tr.reviewers[[i]])
 d <-  dim(tr.reviewers[[i]])
-
-print(n)
-print(s)
-print(d)
 }
 ```
 
@@ -109,10 +105,12 @@ for(i in 1:9) {
     arrange(desc(Freq)) %>%
     mutate(Var1 = tolower(Var1))
   
+  colnames(a.df) <- c("Analyst", "Project") 
+  
   print(n)
   print(a.df)
   
-plot <- ggplot(data = a.df, mapping = aes(reorder(x = Var1, desc(Freq)), y = Freq)) +
+plot <- ggplot(data = a.df, mapping = aes(reorder(x = Analyst, desc(Project)), y = Project)) +
     geom_col(color = "black", fill = "cadetblue3") + 
     labs(
       title = paste0("Distribution of ", n, "'s reviews"),
@@ -291,17 +289,17 @@ format.data <- function(df){
     
     select(missed_QEM_rate, incorrect_result_reported_rate, reprocessing_integration_rate,
            reprocessing_calculation_rate, LIMS_incompletion_rate, GDP_misses_rate,
-           missing_client_documentation_rate) %>%
+           missing_client_documentation_rate, RFT_rate) %>%
     
     summarise(mean(missed_QEM_rate), mean(incorrect_result_reported_rate), mean(reprocessing_integration_rate),
               mean(reprocessing_calculation_rate), mean(LIMS_incompletion_rate), mean(GDP_misses_rate),
-              mean(missing_client_documentation_rate)) %>%
+              mean(missing_client_documentation_rate), mean(RFT_rate)) %>%
   
     rename(missed_QEM_rate = `mean(missed_QEM_rate)`, incorrect_result_reported_rate = `mean(incorrect_result_reported_rate)`,
            reprocessing_integration_rate = `mean(reprocessing_integration_rate)`, 
            reprocessing_calculation_rate = `mean(reprocessing_calculation_rate)`, 
            LIMS_incompletion_rate = `mean(LIMS_incompletion_rate)`, GDP_misses_rate = `mean(GDP_misses_rate)`,
-           missing_client_documentation_rate = `mean(missing_client_documentation_rate)`)
+           missing_client_documentation_rate = `mean(missing_client_documentation_rate)`, RFT_rate = `mean(RFT_rate)`)
   
   return(format_data)
 }
@@ -319,11 +317,12 @@ for(i in 1:length(tr.reviewers)){
 
 plot.data <- function(df, plot_title){
   df <- df %>%
+    select(-RFT_rate) %>%
     pivot_longer(cols = everything()) %>%
     print()
   
   plot_data <- ggplot(data = df, mapping = aes(reorder(x = name, desc(value)), y = value)) +
-    geom_col(fill = "deepskyblue2") +
+    geom_col(fill = "aquamarine3", color = "black") +
     labs(
       title = paste(plot_title, "Correction Rates"),
       caption = "source: TR Excel File"
@@ -332,7 +331,7 @@ plot.data <- function(df, plot_title){
     ylab("Correction Issuance Rate") +
     theme_bw() +
     theme(axis.text.x.bottom = element_text(size = 8)) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1.0))
   
   return(plot_data)
 }
@@ -343,5 +342,21 @@ for(i in 1:length(tr.reviewers)){
 }
 ```
   
-  
+Comparison of RFT rates between tech reviewers
+
+```{r}
+RFT_Compare <- data.frame(matrix(ncol = 2, nrow = 9))
+
+for(i in 1:length(tr.reviewers)){
+  RFT_Compare[i,1] <- names(tr.reviewers[i])
+  RFT_Compare[i,2] <- tr.reviewers[[i]]$RFT_rate
+}
+
+colnames(RFT_Compare) <- c("Reviewer", "RFT_Rate")
+
+ggplot(data = RFT_Compare, mapping = aes(reorder(x = Reviewer, desc(RFT_Rate)), y = RFT_Rate)) +
+  geom_col(fill = "aquamarine3", color = "black")
+
+
+```
   
