@@ -3,31 +3,39 @@ title: "Tech Review Review"
 output: github_document
 ---
 
-1: Business Understanding:
+# 1: Business Understanding:
 
-1.1: Business Objectives
+## 1.1: Business Objectives
   -Provide summary statistics for tech reviewers.
+  
   -Provide leveled list of which tech reviewers reviews the highest quantity, and how harshly.
   
 
-1.2: Assess Situation
+## 1.2: Assess Situation
+
   -.csv file with multiple tabs supplied.
+  
   -No computational resources provided.
-  -No paid time for project provided. 
+  
+  -No paid time for project provided.
+  
   -Minimal requirements/deliverables provided for the project.
+  
   -Possibly results in metric rankings that would bias evaluation of analysts or tech reviewers. Primary risk.
 
 
-1.3: Data Mining Goals
+## 1.3: Data Mining Goals
+
   Success here will look like an even evaluation of each tech reviewer with appropriate weighting
   applied to distinguish method evaluations, validations, and routine testing to properly review tech
   reviewer productivity. Weighting will also be applied to the "C1 - C7" encoded variables which encode
   for quality errors. 
   
 
-2: Data Understanding: 
+# 2: Data Understanding: 
 
-  2.1: Describe Data
+##  2.1: Describe Data
+  
   Dates are imported appropriately, everything else is a character class. Drop all columns including and after comments.
   Hans BY FAR makes up the majority of the data set. More than double. Followed by Dolly and Vir. Chris's data is completely missing,
   and will be removed from analysis.
@@ -36,23 +44,31 @@ output: github_document
   Differing number of variables in each sheet, and need to be normalized.
  
  
-  2.2: Explore Data
+##  2.2: Explore Data
   
   We really need to find a primary key or make one, or find some way to join tables.
+  
   Lets also plan to drop NA values that do not have analyst name observations attached to.
   
   Hans reviews Lauren's projects the most.
-  Vir reviewed Katie's projects the most. 
+  
+  Vir reviewed Katie's projects the most.
+  
   Kim reviews Hillary's projects the most.
+  
   Dolly reviews David M's projects the most, but very evenly reviews across the entire department.
+  
   Clester reviews Katie's projects the most. 
+  
   Michael reviews Alexander's projects the most. Possibly drop Michael from data set as not applicable to analytical services.
+  
   Sarah reviews Hillary's projects the most.
+  
   Dennis reviewed Yesenia's projects the most, and also Caterine's. But now Edmond is #1 of people still at Cambrex.
+  
   Kelly reviews Doug's projects the most of analytical services.
   
-#tr.chris is completely empty
-#tr.jeff having trouble importing
+
 ```{r}
 #Import Data
 library(tidyverse)
@@ -92,9 +108,7 @@ s <-  summary(tr.reviewers[[i]])
 d <-  dim(tr.reviewers[[i]])
 }
 ```
-
-
-#Summarizes how many times a tech reviewer has reviewed each analyst.
+### Summarize how analysts are distributed over tech reviewers.
 
 ```{R}
 for(i in 1:9) {
@@ -111,7 +125,7 @@ for(i in 1:9) {
   print(a.df)
   
 plot <- ggplot(data = a.df, mapping = aes(reorder(x = Analyst, desc(Project)), y = Project)) +
-    geom_col(color = "black", fill = "cadetblue3") + 
+    geom_col(color = "black", fill = "aquamarine3") + 
     labs(
       title = paste0("Distribution of ", n, "'s reviews"),
       caption = "Source: Tech Review .xlsx file"
@@ -125,9 +139,9 @@ print(plot)
 }
 ```
 
-3: Data Preparation
+# 3: Data Preparation
 
-  3.1: Select Data
+##  3.1: Select Data
   
   Todd wants us to grab everything, so lets select all of variables except for comments. Dropping closed date for now due to 
   missing values and inconsistency. Come back and try to repair it.
@@ -174,7 +188,7 @@ kelly <- as.data.frame(tr.reviewers$kelly)
 ```
 
 
-  3.2: Clean Data
+##  3.2: Clean Data
   
   Kim and Dolly both have projects where the data entered for the first test is assumed to apply to the consecutive tests. This is
   corrected by applying a fill to the columns where this occurs. The goal of this step is to associate all testing with the analyst
@@ -241,10 +255,9 @@ tr.reviewers <- list("Hans" = hans,
 for(i in 1:length(tr.reviewers)){
   tr.reviewers[[i]] <- QEM.Encode(tr.reviewers[[i]])
 }
-
 ```
 
-  3.3: Construct Data
+##  3.3: Construct Data
   
   As per the business objective provided, new summary statistics will be added to each dataframe that describe the rate at which each 
   tech reviewer assigns corrections and Right-First-Time assignments.
@@ -271,14 +284,14 @@ for(i in 1:length(tr.reviewers)){
 ```
 
   
-  3.4: Integrate Data
+##  3.4: Integrate Data
   
   At this point, our business objective is to analyze the correction rate of each reviewer. Each reviewer is represented within the 
   list tr.reviewers, and each tech reviewer has reviewed a different number of projects. There is no need for integration of data 
   at this point.
   
   
-  3.5: Format Data
+##  3.5: Format Data
   
   Data formatting was performed by summarizing the entire data set by the constructed data created in step 3.3.
   
@@ -307,11 +320,10 @@ format.data <- function(df){
 for(i in 1:length(tr.reviewers)){
   tr.reviewers[[i]] <- format.data(tr.reviewers[[i]])
 }
-
 ```
   
   
-  Data Visualization:
+###  Data Visualization:
   
 ```{r}
 
@@ -320,6 +332,7 @@ plot.data <- function(df, plot_title){
     select(-RFT_rate) %>%
     pivot_longer(cols = everything()) %>%
     print()
+    
   
   plot_data <- ggplot(data = df, mapping = aes(reorder(x = name, desc(value)), y = value)) +
     geom_col(fill = "aquamarine3", color = "black") +
@@ -342,7 +355,7 @@ for(i in 1:length(tr.reviewers)){
 }
 ```
   
-Comparison of RFT rates between tech reviewers
+### Comparison of RFT rates between tech reviewers
 
 ```{r}
 RFT_Compare <- data.frame(matrix(ncol = 2, nrow = 9))
@@ -356,7 +369,5 @@ colnames(RFT_Compare) <- c("Reviewer", "RFT_Rate")
 
 ggplot(data = RFT_Compare, mapping = aes(reorder(x = Reviewer, desc(RFT_Rate)), y = RFT_Rate)) +
   geom_col(fill = "aquamarine3", color = "black")
-
-
 ```
   
