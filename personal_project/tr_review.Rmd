@@ -69,6 +69,9 @@ output: github_document
   Kelly reviews Doug's projects the most of analytical services.
   
 
+
+
+
 ```{r}
 #Import Data
 library(tidyverse)
@@ -108,9 +111,15 @@ s <-  summary(tr.reviewers[[i]])
 d <-  dim(tr.reviewers[[i]])
 }
 ```
+
+
+
+
+
+
 ### Summarize how analysts are distributed over tech reviewers.
 
-```{R}
+```{r, eval=TRUE}
 for(i in 1:9) {
   n <- names(tr.reviewers[i])
   a <- table(tr.reviewers[[i]]$Analyst)
@@ -120,8 +129,6 @@ for(i in 1:9) {
     mutate(Var1 = tolower(Var1))
   
   colnames(a.df) <- c("Analyst", "Project") 
-  
-  print(n)
   print(a.df)
   
 plot <- ggplot(data = a.df, mapping = aes(reorder(x = Analyst, desc(Project)), y = Project)) +
@@ -149,7 +156,6 @@ print(plot)
   Variables for different types of QA findings are decoded below. Other columns are renamed to be more usable. 
   
 ```{r}
-
 var.decode <- function(tr.dataframe) {
   tr.dataframe <- tr.dataframe %>%
     select(`Start Date`, Project, `Project Description`, Analyst, `Test Type`,
@@ -255,6 +261,8 @@ tr.reviewers <- list("Hans" = hans,
 for(i in 1:length(tr.reviewers)){
   tr.reviewers[[i]] <- QEM.Encode(tr.reviewers[[i]])
 }
+
+tr.search <- tr.reviewers
 ```
 
 ##  3.3: Construct Data
@@ -296,7 +304,6 @@ for(i in 1:length(tr.reviewers)){
   Data formatting was performed by summarizing the entire data set by the constructed data created in step 3.3.
   
 ```{r}
-
 format.data <- function(df){
   format_data <- df %>%
     
@@ -326,15 +333,14 @@ for(i in 1:length(tr.reviewers)){
 ###  Data Visualization:
   
 ```{r}
-
 plot.data <- function(df, plot_title){
   df <- df %>%
-    select(-RFT_rate) %>%
-    pivot_longer(cols = everything()) %>%
-    print()
-    
+    pivot_longer(cols = everything())
   
-  plot_data <- ggplot(data = df, mapping = aes(reorder(x = name, desc(value)), y = value)) +
+  colnames(df) <- c("Correction", "Rate")
+  print(df)
+
+  plot_data <- ggplot(data = df, mapping = aes(reorder(x = Correction, desc(Rate)), y = Rate)) +
     geom_col(fill = "aquamarine3", color = "black") +
     labs(
       title = paste(plot_title, "Correction Rates"),
@@ -343,7 +349,7 @@ plot.data <- function(df, plot_title){
     xlab("Correction Type") +
     ylab("Correction Issuance Rate") +
     theme_bw() +
-    theme(axis.text.x.bottom = element_text(size = 8)) +
+    theme(axis.text.x.bottom = element_text(size = 9)) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1.0))
   
   return(plot_data)
@@ -371,3 +377,105 @@ ggplot(data = RFT_Compare, mapping = aes(reorder(x = Reviewer, desc(RFT_Rate)), 
   geom_col(fill = "aquamarine3", color = "black")
 ```
   
+# Statistics for Team Todd
+
+```{r}
+tr_todd <- data.frame()
+
+tr_todd_H <- tr.search[[1]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison")) 
+
+tr_todd_V <- tr.search[[2]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison")) 
+
+tr_todd_K <- tr.search[[3]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison"))
+
+tr_todd_D <- tr.search[[4]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison"))
+
+tr_todd_C <- tr.search[[5]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison"))
+
+tr_todd_M <- tr.search[[6]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison")) 
+
+tr_todd_S <- tr.search[[7]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison")) 
+
+tr_todd_De <- tr.search[[8]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison")) 
+
+tr_todd_Ke <- tr.search[[9]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison"))
+
+tr_todd <- rbind(tr_todd_H, tr_todd_V, tr_todd_K, tr_todd_D, tr_todd_M, tr_todd_S,
+                 tr_todd_De, tr_todd_Ke)
+
+tr_todd <- tr_todd %>%
+  mutate(Analyst = str_replace(Analyst, " Lange", " L"),
+         Analyst = str_replace(Analyst, " Bailey", " B"),
+         Analyst = str_replace(Analyst, "Harrison", "Harris"),
+         Analyst = str_replace(Analyst, " Thomas", " T"),
+         Analyst = str_replace(Analyst, "Edmond B and Michael Robinson", "Edmond B"),
+         Analyst = str_replace(Analyst, "Ashley Carver Edmond B", "Edmond B"),
+         Analyst = str_replace(Analyst, " Middlesworth", " M"),
+         Analyst = str_replace(Analyst, " St. Lawrence", " S"),
+         Analyst = str_replace(Analyst, " Kleckner", " K"))
+
+print(table(tr_todd$Analyst))
+```
+
+```{r}
+tr_allison <- tr_todd %>% filter(Analyst == "Allison L")
+  allison_summary <- correction.summary(tr_allison) 
+    allison_summary <- format.data(allison_summary)
+      allison_plot <- plot.data(allison_summary, "Allison") %>%
+    print()
+
+tr_edmond <- tr_todd %>% filter(Analyst == "Edmond B")
+  edmond_summary <- correction.summary(tr_edmond)
+    edmond_summary <- format.data(edmond_summary)
+      edmond_plot <- plot.data(edmond_summary, "Edmond") %>%
+    print()
+
+tr_harris <- tr_todd %>% filter(Analyst == "Harris M")
+  harris_summary <- correction.summary(tr_harris)
+    harris_summary <- format.data(harris_summary)
+      harris_plot <- plot.data(harris_summary, "Harris") %>%
+    print()
+
+tr_kaila <- tr_todd %>% filter(Analyst == "Kaila K")
+  kaila_summary <- correction.summary(tr_kaila)
+    kaila_summary <- format.data(kaila_summary)
+      kaila_plot <- plot.data(kaila_summary, "Kaila") %>%
+    print()
+
+tr_kayla <- tr_todd %>% filter(Analyst == "Kayla T")
+  kayla_summary <- correction.summary(tr_kayla)
+    kayla_summary <- format.data(kayla_summary)
+      kayla_plot <- plot.data(kayla_summary, "Kayla") %>%
+    print()
+
+tr_matt <- tr_todd %>% filter(Analyst == "Matthew S")
+  matt_summary <- correction.summary(tr_matt)
+    matt_summary <- format.data(matt_summary)
+      matt_plot <- plot.data(matt_summary, "Matt") %>%
+    print()
+```
+
+
+```{r}
+
+
+```
+
+
+
+
+
+
+
+
+
+
