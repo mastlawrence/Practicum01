@@ -190,8 +190,6 @@ for(i in 1:9) {
     mutate(Var1 = tolower(Var1))
   
   colnames(a.df) <- c("Analyst", "Project") 
-  
-  print(n)
   print(a.df)
   
 plot <- ggplot(data = a.df, mapping = aes(reorder(x = Analyst, desc(Project)), y = Project)) +
@@ -209,7 +207,6 @@ print(plot)
 }
 ```
 
-    ## [1] "hans"
     ##                     Analyst Project
     ## 1            lauren iannaco     160
     ## 2            kaila kleckner     138
@@ -256,7 +253,6 @@ print(plot)
 
 ![](tr_review_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
-    ## [1] "vir"
     ##                                           Analyst Project
     ## 1                                    katie miller      30
     ## 2                                     david milam      16
@@ -322,7 +318,6 @@ print(plot)
 
 ![](tr_review_files/figure-gfm/unnamed-chunk-2-2.png)<!-- -->
 
-    ## [1] "kim"
     ##             Analyst Project
     ## 1    hillary straub       9
     ## 2  carolina merrill       5
@@ -349,7 +344,6 @@ print(plot)
 
 ![](tr_review_files/figure-gfm/unnamed-chunk-2-3.png)<!-- -->
 
-    ## [1] "dolly"
     ##                  Analyst Project
     ## 1                david m      15
     ## 2               hilary s      13
@@ -443,7 +437,6 @@ print(plot)
 
 ![](tr_review_files/figure-gfm/unnamed-chunk-2-4.png)<!-- -->
 
-    ## [1] "clester"
     ##                            Analyst Project
     ## 1                     katie miller      11
     ## 2                   hillary straub       5
@@ -490,7 +483,6 @@ print(plot)
 
 ![](tr_review_files/figure-gfm/unnamed-chunk-2-5.png)<!-- -->
 
-    ## [1] "michael"
     ##                              Analyst Project
     ## 1                  alexander bowitch       2
     ## 2                     benjamin pizio       1
@@ -505,7 +497,6 @@ print(plot)
 
 ![](tr_review_files/figure-gfm/unnamed-chunk-2-6.png)<!-- -->
 
-    ## [1] "sarah"
     ##                               Analyst Project
     ## 1                      hillary straub      12
     ## 2                          jack bloom       9
@@ -544,7 +535,6 @@ print(plot)
 
 ![](tr_review_files/figure-gfm/unnamed-chunk-2-7.png)<!-- -->
 
-    ## [1] "dennis"
     ##                         Analyst Project
     ## 1               yesenia vazquez      12
     ## 2              catherine murray       9
@@ -581,7 +571,6 @@ print(plot)
 
 ![](tr_review_files/figure-gfm/unnamed-chunk-2-8.png)<!-- -->
 
-    ## [1] "kelly"
     ##                                              Analyst Project
     ## 1                                           jake dam       8
     ## 2                                         doug moses       7
@@ -765,6 +754,8 @@ tr.reviewers <- list("Hans" = hans,
 for(i in 1:length(tr.reviewers)){
   tr.reviewers[[i]] <- QEM.Encode(tr.reviewers[[i]])
 }
+
+tr.search <- tr.reviewers
 ```
 
 ## 3.3: Construct Data
@@ -818,11 +809,13 @@ format.data <- function(df){
               mean(reprocessing_calculation_rate), mean(LIMS_incompletion_rate), mean(GDP_misses_rate),
               mean(missing_client_documentation_rate), mean(RFT_rate)) %>%
   
-    rename(missed_QEM_rate = `mean(missed_QEM_rate)`, incorrect_result_reported_rate = `mean(incorrect_result_reported_rate)`,
-           reprocessing_integration_rate = `mean(reprocessing_integration_rate)`, 
-           reprocessing_calculation_rate = `mean(reprocessing_calculation_rate)`, 
-           LIMS_incompletion_rate = `mean(LIMS_incompletion_rate)`, GDP_misses_rate = `mean(GDP_misses_rate)`,
-           missing_client_documentation_rate = `mean(missing_client_documentation_rate)`, RFT_rate = `mean(RFT_rate)`)
+    rename(missed_QEM = `mean(missed_QEM_rate)`, 
+           incorrect_results = `mean(incorrect_result_reported_rate)`,
+           RP_integration = `mean(reprocessing_integration_rate)`, 
+           RP_calculation = `mean(reprocessing_calculation_rate)`, 
+           LIMS = `mean(LIMS_incompletion_rate)`, 
+           GDP_misses = `mean(GDP_misses_rate)`,
+           client_doc = `mean(missing_client_documentation_rate)`, RFT_rate = `mean(RFT_rate)`)
   
   return(format_data)
 }
@@ -837,12 +830,12 @@ for(i in 1:length(tr.reviewers)){
 ``` r
 plot.data <- function(df, plot_title){
   df <- df %>%
-    select(-RFT_rate) %>%
-    pivot_longer(cols = everything()) %>%
-    print()
-    
+    pivot_longer(cols = everything())
   
-  plot_data <- ggplot(data = df, mapping = aes(reorder(x = name, desc(value)), y = value)) +
+  colnames(df) <- c("Correction", "Rate")
+  print(df)
+
+  plot_data <- ggplot(data = df, mapping = aes(reorder(x = Correction, desc(Rate)), y = Rate)) +
     geom_col(fill = "aquamarine3", color = "black") +
     labs(
       title = paste(plot_title, "Correction Rates"),
@@ -851,10 +844,9 @@ plot.data <- function(df, plot_title){
     xlab("Correction Type") +
     ylab("Correction Issuance Rate") +
     theme_bw() +
-    theme(axis.text.x.bottom = element_text(size = 8)) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1.0))
+    theme(axis.text.x.bottom = element_text(size = 8)) 
+    #theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1.0))
   
-  print(plot_data)
   return(plot_data)
 }
 
@@ -864,122 +856,131 @@ for(i in 1:length(tr.reviewers)){
 }
 ```
 
-    ## # A tibble: 7 × 2
-    ##   name                              value
-    ##   <chr>                             <dbl>
-    ## 1 missed_QEM_rate                   0.718
-    ## 2 incorrect_result_reported_rate    1.33 
-    ## 3 reprocessing_integration_rate     1.03 
-    ## 4 reprocessing_calculation_rate     1.13 
-    ## 5 LIMS_incompletion_rate            9.03 
-    ## 6 GDP_misses_rate                   6.15 
-    ## 7 missing_client_documentation_rate 0.308
+    ## # A tibble: 8 × 2
+    ##   Correction          Rate
+    ##   <chr>              <dbl>
+    ## 1 missed_QEM         0.718
+    ## 2 incorrect_results  1.33 
+    ## 3 RP_integration     1.03 
+    ## 4 RP_calculation     1.13 
+    ## 5 LIMS               9.03 
+    ## 6 GDP_misses         6.15 
+    ## 7 client_doc         0.308
+    ## 8 RFT_rate          83.6
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
-    ## # A tibble: 7 × 2
-    ##   name                              value
-    ##   <chr>                             <dbl>
-    ## 1 missed_QEM_rate                   11.4 
-    ## 2 incorrect_result_reported_rate     4.49
-    ## 3 reprocessing_integration_rate      3.67
-    ## 4 reprocessing_calculation_rate      7.76
-    ## 5 LIMS_incompletion_rate            11.0 
-    ## 6 GDP_misses_rate                   46.1 
-    ## 7 missing_client_documentation_rate  2.04
+    ## # A tibble: 8 × 2
+    ##   Correction         Rate
+    ##   <chr>             <dbl>
+    ## 1 missed_QEM        11.4 
+    ## 2 incorrect_results  4.49
+    ## 3 RP_integration     3.67
+    ## 4 RP_calculation     7.76
+    ## 5 LIMS              11.0 
+    ## 6 GDP_misses        46.1 
+    ## 7 client_doc         2.04
+    ## 8 RFT_rate          48.2
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-4.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
-    ## # A tibble: 7 × 2
-    ##   name                              value
-    ##   <chr>                             <dbl>
-    ## 1 missed_QEM_rate                    3.57
-    ## 2 incorrect_result_reported_rate    17.9 
-    ## 3 reprocessing_integration_rate      3.57
-    ## 4 reprocessing_calculation_rate      4.76
-    ## 5 LIMS_incompletion_rate             2.38
-    ## 6 GDP_misses_rate                   19.0 
-    ## 7 missing_client_documentation_rate  1.19
+    ## # A tibble: 8 × 2
+    ##   Correction         Rate
+    ##   <chr>             <dbl>
+    ## 1 missed_QEM         3.57
+    ## 2 incorrect_results 17.9 
+    ## 3 RP_integration     3.57
+    ## 4 RP_calculation     4.76
+    ## 5 LIMS               2.38
+    ## 6 GDP_misses        19.0 
+    ## 7 client_doc         1.19
+    ## 8 RFT_rate          45.2
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-5.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-6.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
 
-    ## # A tibble: 7 × 2
-    ##   name                              value
-    ##   <chr>                             <dbl>
-    ## 1 missed_QEM_rate                    6.34
-    ## 2 incorrect_result_reported_rate    12.1 
-    ## 3 reprocessing_integration_rate      4.96
-    ## 4 reprocessing_calculation_rate      8.26
-    ## 5 LIMS_incompletion_rate            13.5 
-    ## 6 GDP_misses_rate                    9.09
-    ## 7 missing_client_documentation_rate  1.93
+    ## # A tibble: 8 × 2
+    ##   Correction         Rate
+    ##   <chr>             <dbl>
+    ## 1 missed_QEM         6.34
+    ## 2 incorrect_results 12.1 
+    ## 3 RP_integration     4.96
+    ## 4 RP_calculation     8.26
+    ## 5 LIMS              13.5 
+    ## 6 GDP_misses         9.09
+    ## 7 client_doc         1.93
+    ## 8 RFT_rate          52.9
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-7.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-8.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-4.png)<!-- -->
 
-    ## # A tibble: 7 × 2
-    ##   name                              value
-    ##   <chr>                             <dbl>
-    ## 1 missed_QEM_rate                    7.95
-    ## 2 incorrect_result_reported_rate     6.82
-    ## 3 reprocessing_integration_rate     11.4 
-    ## 4 reprocessing_calculation_rate      9.09
-    ## 5 LIMS_incompletion_rate             2.27
-    ## 6 GDP_misses_rate                   42.0 
-    ## 7 missing_client_documentation_rate  0
+    ## # A tibble: 8 × 2
+    ##   Correction         Rate
+    ##   <chr>             <dbl>
+    ## 1 missed_QEM         7.95
+    ## 2 incorrect_results  6.82
+    ## 3 RP_integration    11.4 
+    ## 4 RP_calculation     9.09
+    ## 5 LIMS               2.27
+    ## 6 GDP_misses        42.0 
+    ## 7 client_doc         0   
+    ## 8 RFT_rate          50
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-9.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-10.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-5.png)<!-- -->
 
-    ## # A tibble: 7 × 2
-    ##   name                              value
-    ##   <chr>                             <dbl>
-    ## 1 missed_QEM_rate                     0  
-    ## 2 incorrect_result_reported_rate      0  
-    ## 3 reprocessing_integration_rate       0  
-    ## 4 reprocessing_calculation_rate      27.3
-    ## 5 LIMS_incompletion_rate             27.3
-    ## 6 GDP_misses_rate                    18.2
-    ## 7 missing_client_documentation_rate   0
+    ## # A tibble: 8 × 2
+    ##   Correction         Rate
+    ##   <chr>             <dbl>
+    ## 1 missed_QEM          0  
+    ## 2 incorrect_results   0  
+    ## 3 RP_integration      0  
+    ## 4 RP_calculation     27.3
+    ## 5 LIMS               27.3
+    ## 6 GDP_misses         18.2
+    ## 7 client_doc          0  
+    ## 8 RFT_rate           18.2
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-11.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-12.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-6.png)<!-- -->
 
-    ## # A tibble: 7 × 2
-    ##   name                              value
-    ##   <chr>                             <dbl>
-    ## 1 missed_QEM_rate                    8.93
-    ## 2 incorrect_result_reported_rate    14.3 
-    ## 3 reprocessing_integration_rate      2.68
-    ## 4 reprocessing_calculation_rate     13.4 
-    ## 5 LIMS_incompletion_rate            20.5 
-    ## 6 GDP_misses_rate                   40.2 
-    ## 7 missing_client_documentation_rate  8.04
+    ## # A tibble: 8 × 2
+    ##   Correction         Rate
+    ##   <chr>             <dbl>
+    ## 1 missed_QEM         8.93
+    ## 2 incorrect_results 14.3 
+    ## 3 RP_integration     2.68
+    ## 4 RP_calculation    13.4 
+    ## 5 LIMS              20.5 
+    ## 6 GDP_misses        40.2 
+    ## 7 client_doc         8.04
+    ## 8 RFT_rate          33.9
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-13.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-14.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-7.png)<!-- -->
 
-    ## # A tibble: 7 × 2
-    ##   name                              value
-    ##   <chr>                             <dbl>
-    ## 1 missed_QEM_rate                   1.71 
-    ## 2 incorrect_result_reported_rate    0    
-    ## 3 reprocessing_integration_rate     4.27 
-    ## 4 reprocessing_calculation_rate     1.71 
-    ## 5 LIMS_incompletion_rate            0.855
-    ## 6 GDP_misses_rate                   5.13 
-    ## 7 missing_client_documentation_rate 0
+    ## # A tibble: 8 × 2
+    ##   Correction          Rate
+    ##   <chr>              <dbl>
+    ## 1 missed_QEM         1.71 
+    ## 2 incorrect_results  0    
+    ## 3 RP_integration     4.27 
+    ## 4 RP_calculation     1.71 
+    ## 5 LIMS               0.855
+    ## 6 GDP_misses         5.13 
+    ## 7 client_doc         0    
+    ## 8 RFT_rate          59.8
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-15.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-16.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-8.png)<!-- -->
 
-    ## # A tibble: 7 × 2
-    ##   name                               value
-    ##   <chr>                              <dbl>
-    ## 1 missed_QEM_rate                    0    
-    ## 2 incorrect_result_reported_rate     0.870
-    ## 3 reprocessing_integration_rate      2.61 
-    ## 4 reprocessing_calculation_rate      1.74 
-    ## 5 LIMS_incompletion_rate             0    
-    ## 6 GDP_misses_rate                   10.4  
-    ## 7 missing_client_documentation_rate  0.870
+    ## # A tibble: 8 × 2
+    ##   Correction          Rate
+    ##   <chr>              <dbl>
+    ## 1 missed_QEM         0    
+    ## 2 incorrect_results  0.870
+    ## 3 RP_integration     2.61 
+    ## 4 RP_calculation     1.74 
+    ## 5 LIMS               0    
+    ## 6 GDP_misses        10.4  
+    ## 7 client_doc         0.870
+    ## 8 RFT_rate          84.3
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-17.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-18.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-9.png)<!-- -->
 
 ### Comparison of RFT rates between tech reviewers
 
@@ -998,3 +999,190 @@ ggplot(data = RFT_Compare, mapping = aes(reorder(x = Reviewer, desc(RFT_Rate)), 
 ```
 
 ![](tr_review_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+# Statistics for Team Todd
+
+``` r
+tr_todd <- data.frame()
+
+tr_todd_H <- tr.search[[1]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison")) 
+
+tr_todd_V <- tr.search[[2]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison")) 
+
+tr_todd_K <- tr.search[[3]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison"))
+
+tr_todd_D <- tr.search[[4]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison"))
+
+tr_todd_C <- tr.search[[5]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison"))
+
+tr_todd_M <- tr.search[[6]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison")) 
+
+tr_todd_S <- tr.search[[7]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison")) 
+
+tr_todd_De <- tr.search[[8]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison")) 
+
+tr_todd_Ke <- tr.search[[9]] %>%
+  filter(str_detect(Analyst, "Kayla|Kaila|Harris|Edmond|Matthew S|Fangyi|Allison"))
+
+tr_todd <- rbind(tr_todd_H, tr_todd_V, tr_todd_K, tr_todd_D, tr_todd_M, tr_todd_S,
+                 tr_todd_De, tr_todd_Ke)
+
+tr_todd <- tr_todd %>%
+  mutate(Analyst = str_replace(Analyst, " Lange", " L"),
+         Analyst = str_replace(Analyst, " Bailey", " B"),
+         Analyst = str_replace(Analyst, "Harrison", "Harris"),
+         Analyst = str_replace(Analyst, " Thomas", " T"),
+         Analyst = str_replace(Analyst, "Edmond B and Michael Robinson", "Edmond B"),
+         Analyst = str_replace(Analyst, "Ashley Carver Edmond B", "Edmond B"),
+         Analyst = str_replace(Analyst, " Middlesworth", " M"),
+         Analyst = str_replace(Analyst, " St. Lawrence", " S"),
+         Analyst = str_replace(Analyst, " Kleckner", " K"))
+
+print(table(tr_todd$Analyst))
+```
+
+    ## 
+    ##       Allison L        Edmond B        Harris M         Kaila K Kayla / Allison 
+    ##               8              27               6             140               1 
+    ##         Kayla T       Matthew S 
+    ##             133              19
+
+``` r
+tr_allison <- tr_todd %>% filter(Analyst == "Allison L")
+  allison_summary <- correction.summary(tr_allison) 
+    allison_summary <- format.data(allison_summary)
+      allison_plot <- plot.data(allison_summary, "Allison") %>%
+    print()
+```
+
+    ## # A tibble: 8 × 2
+    ##   Correction         Rate
+    ##   <chr>             <dbl>
+    ## 1 missed_QEM          0  
+    ## 2 incorrect_results  12.5
+    ## 3 RP_integration     12.5
+    ## 4 RP_calculation      0  
+    ## 5 LIMS               12.5
+    ## 6 GDP_misses         12.5
+    ## 7 client_doc          0  
+    ## 8 RFT_rate           62.5
+
+![](tr_review_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+tr_edmond <- tr_todd %>% filter(Analyst == "Edmond B")
+  edmond_summary <- correction.summary(tr_edmond)
+    edmond_summary <- format.data(edmond_summary)
+      edmond_plot <- plot.data(edmond_summary, "Edmond") %>%
+    print()
+```
+
+    ## # A tibble: 8 × 2
+    ##   Correction         Rate
+    ##   <chr>             <dbl>
+    ## 1 missed_QEM         3.70
+    ## 2 incorrect_results  7.41
+    ## 3 RP_integration     3.70
+    ## 4 RP_calculation    18.5 
+    ## 5 LIMS              22.2 
+    ## 6 GDP_misses        40.7 
+    ## 7 client_doc         0   
+    ## 8 RFT_rate          33.3
+
+![](tr_review_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
+
+``` r
+tr_harris <- tr_todd %>% filter(Analyst == "Harris M")
+  harris_summary <- correction.summary(tr_harris)
+    harris_summary <- format.data(harris_summary)
+      harris_plot <- plot.data(harris_summary, "Harris") %>%
+    print()
+```
+
+    ## # A tibble: 8 × 2
+    ##   Correction         Rate
+    ##   <chr>             <dbl>
+    ## 1 missed_QEM          0  
+    ## 2 incorrect_results   0  
+    ## 3 RP_integration      0  
+    ## 4 RP_calculation      0  
+    ## 5 LIMS                0  
+    ## 6 GDP_misses         16.7
+    ## 7 client_doc          0  
+    ## 8 RFT_rate           33.3
+
+![](tr_review_files/figure-gfm/unnamed-chunk-11-3.png)<!-- -->
+
+``` r
+tr_kaila <- tr_todd %>% filter(Analyst == "Kaila K")
+  kaila_summary <- correction.summary(tr_kaila)
+    kaila_summary <- format.data(kaila_summary)
+      kaila_plot <- plot.data(kaila_summary, "Kaila") %>%
+    print()
+```
+
+    ## # A tibble: 8 × 2
+    ##   Correction          Rate
+    ##   <chr>              <dbl>
+    ## 1 missed_QEM         0.714
+    ## 2 incorrect_results  2.14 
+    ## 3 RP_integration     2.86 
+    ## 4 RP_calculation     2.14 
+    ## 5 LIMS               3.57 
+    ## 6 GDP_misses         1.43 
+    ## 7 client_doc         0.714
+    ## 8 RFT_rate          89.3
+
+![](tr_review_files/figure-gfm/unnamed-chunk-11-4.png)<!-- -->
+
+``` r
+tr_kayla <- tr_todd %>% filter(Analyst == "Kayla T")
+  kayla_summary <- correction.summary(tr_kayla)
+    kayla_summary <- format.data(kayla_summary)
+      kayla_plot <- plot.data(kayla_summary, "Kayla") %>%
+    print()
+```
+
+    ## # A tibble: 8 × 2
+    ##   Correction          Rate
+    ##   <chr>              <dbl>
+    ## 1 missed_QEM         0.752
+    ## 2 incorrect_results  0    
+    ## 3 RP_integration     0.752
+    ## 4 RP_calculation     2.26 
+    ## 5 LIMS               2.26 
+    ## 6 GDP_misses         3.76 
+    ## 7 client_doc         0    
+    ## 8 RFT_rate          92.5
+
+![](tr_review_files/figure-gfm/unnamed-chunk-11-5.png)<!-- -->
+
+``` r
+tr_matt <- tr_todd %>% filter(Analyst == "Matthew S")
+  matt_summary <- correction.summary(tr_matt)
+    matt_summary <- format.data(matt_summary)
+      matt_plot <- plot.data(matt_summary, "Matt") %>%
+    print()
+```
+
+    ## # A tibble: 8 × 2
+    ##   Correction         Rate
+    ##   <chr>             <dbl>
+    ## 1 missed_QEM         0   
+    ## 2 incorrect_results  5.26
+    ## 3 RP_integration     0   
+    ## 4 RP_calculation     5.26
+    ## 5 LIMS              26.3 
+    ## 6 GDP_misses        52.6 
+    ## 7 client_doc         0   
+    ## 8 RFT_rate          36.8
+
+![](tr_review_files/figure-gfm/unnamed-chunk-11-6.png)<!-- -->

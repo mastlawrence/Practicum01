@@ -315,11 +315,13 @@ format.data <- function(df){
               mean(reprocessing_calculation_rate), mean(LIMS_incompletion_rate), mean(GDP_misses_rate),
               mean(missing_client_documentation_rate), mean(RFT_rate)) %>%
   
-    rename(missed_QEM_rate = `mean(missed_QEM_rate)`, incorrect_result_reported_rate = `mean(incorrect_result_reported_rate)`,
-           reprocessing_integration_rate = `mean(reprocessing_integration_rate)`, 
-           reprocessing_calculation_rate = `mean(reprocessing_calculation_rate)`, 
-           LIMS_incompletion_rate = `mean(LIMS_incompletion_rate)`, GDP_misses_rate = `mean(GDP_misses_rate)`,
-           missing_client_documentation_rate = `mean(missing_client_documentation_rate)`, RFT_rate = `mean(RFT_rate)`)
+    rename(missed_QEM = `mean(missed_QEM_rate)`, 
+           incorrect_results = `mean(incorrect_result_reported_rate)`,
+           RP_integration = `mean(reprocessing_integration_rate)`, 
+           RP_calculation = `mean(reprocessing_calculation_rate)`, 
+           LIMS = `mean(LIMS_incompletion_rate)`, 
+           GDP_misses = `mean(GDP_misses_rate)`,
+           client_doc = `mean(missing_client_documentation_rate)`, RFT_rate = `mean(RFT_rate)`)
   
   return(format_data)
 }
@@ -349,8 +351,8 @@ plot.data <- function(df, plot_title){
     xlab("Correction Type") +
     ylab("Correction Issuance Rate") +
     theme_bw() +
-    theme(axis.text.x.bottom = element_text(size = 9)) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1.0))
+    theme(axis.text.x.bottom = element_text(size = 8)) 
+    #theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1.0))
   
   return(plot_data)
 }
@@ -463,19 +465,3 @@ tr_matt <- tr_todd %>% filter(Analyst == "Matthew S")
       matt_plot <- plot.data(matt_summary, "Matt") %>%
     print()
 ```
-
-
-```{r}
-
-
-```
-
-
-
-
-
-
-
-
-
-
