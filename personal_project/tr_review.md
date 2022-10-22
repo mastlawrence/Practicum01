@@ -854,6 +854,7 @@ plot.data <- function(df, plot_title){
     theme(axis.text.x.bottom = element_text(size = 8)) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1.0))
   
+  print(plot_data)
   return(plot_data)
 }
 
@@ -874,7 +875,7 @@ for(i in 1:length(tr.reviewers)){
     ## 6 GDP_misses_rate                   6.15 
     ## 7 missing_client_documentation_rate 0.308
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
     ## # A tibble: 7 × 2
     ##   name                              value
@@ -887,7 +888,7 @@ for(i in 1:length(tr.reviewers)){
     ## 6 GDP_misses_rate                   46.1 
     ## 7 missing_client_documentation_rate  2.04
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-4.png)<!-- -->
 
     ## # A tibble: 7 × 2
     ##   name                              value
@@ -900,7 +901,7 @@ for(i in 1:length(tr.reviewers)){
     ## 6 GDP_misses_rate                   19.0 
     ## 7 missing_client_documentation_rate  1.19
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-5.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-6.png)<!-- -->
 
     ## # A tibble: 7 × 2
     ##   name                              value
@@ -913,7 +914,7 @@ for(i in 1:length(tr.reviewers)){
     ## 6 GDP_misses_rate                    9.09
     ## 7 missing_client_documentation_rate  1.93
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-4.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-7.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-8.png)<!-- -->
 
     ## # A tibble: 7 × 2
     ##   name                              value
@@ -926,7 +927,7 @@ for(i in 1:length(tr.reviewers)){
     ## 6 GDP_misses_rate                   42.0 
     ## 7 missing_client_documentation_rate  0
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-5.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-9.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-10.png)<!-- -->
 
     ## # A tibble: 7 × 2
     ##   name                              value
@@ -939,7 +940,7 @@ for(i in 1:length(tr.reviewers)){
     ## 6 GDP_misses_rate                    18.2
     ## 7 missing_client_documentation_rate   0
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-6.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-11.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-12.png)<!-- -->
 
     ## # A tibble: 7 × 2
     ##   name                              value
@@ -952,7 +953,7 @@ for(i in 1:length(tr.reviewers)){
     ## 6 GDP_misses_rate                   40.2 
     ## 7 missing_client_documentation_rate  8.04
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-7.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-13.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-14.png)<!-- -->
 
     ## # A tibble: 7 × 2
     ##   name                              value
@@ -965,7 +966,7 @@ for(i in 1:length(tr.reviewers)){
     ## 6 GDP_misses_rate                   5.13 
     ## 7 missing_client_documentation_rate 0
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-8.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-15.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-16.png)<!-- -->
 
     ## # A tibble: 7 × 2
     ##   name                               value
@@ -978,7 +979,7 @@ for(i in 1:length(tr.reviewers)){
     ## 6 GDP_misses_rate                   10.4  
     ## 7 missing_client_documentation_rate  0.870
 
-![](tr_review_files/figure-gfm/unnamed-chunk-8-9.png)<!-- -->
+![](tr_review_files/figure-gfm/unnamed-chunk-8-17.png)<!-- -->![](tr_review_files/figure-gfm/unnamed-chunk-8-18.png)<!-- -->
 
 ### Comparison of RFT rates between tech reviewers
 
