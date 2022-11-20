@@ -31,7 +31,7 @@ data(mouseData)
 
 #Creates biom object and writes data to file.
 b <- MRexperiment2biom(mouseData)
-write_biom(b, biom_file = "~/Desktop/otu_table.biom")
+#write_biom(b, biom_file = "~/Desktop/otu_table.biom")
 ```
 
 ## 2.2: Loading Count Data
@@ -300,15 +300,19 @@ zigControl determines default settings. To use the functions produced by this
 model, the final matrix model needs to be extracted using res$fit$design
 
 ```{r}
+#Creates dataframes with just smoking status and sample type.
 smokingStatus = pData(lungTrim)$SmokingStatus
 bodySite = pData(lungTrim)$SampleType
 
+#Normalizes Factors
 normFactor = normFactors(lungTrim)
 normFactor = log2(normFactor/median(normFactor) + 1)
 
+#Creates model
 mod = model.matrix(~smokingStatus + bodySite + normFactor)
 settings = zigControl(maxit = 10, verbose = TRUE)
 
+#Implements fitZig
 fit = fitZig(obj = lungTrim, mod = mod, useCSSoffset = FALSE,
              control = settings)
 ```
@@ -372,8 +376,10 @@ between samples is significant.". Uses Fisher's exact test and calculates p-valu
 This process is handled by the function fitPA().
 
 ```{r}
+#Extracts just diet from the object
 classes = pData(mouseData)$diet
 
+#Implements presence-absense testing
 res = fitPA(mouseData[1:5, ], cl = classes)
 head(res)
 ```
@@ -385,8 +391,10 @@ counts are similar/comparable between groups. This test is handled by the functi
 fitDO()
 
 ```{r}
+#Extracts just diet from the object.
 classes = pData(mouseData)$diet
 
+#Implements discovery-odds ratio testing
 res = fitDO(mouseData[1:100, ], cl = classes, norm = FALSE, log = FALSE)
 head(res)
 ```
@@ -397,6 +405,7 @@ This is essentially a regression modeling which tests the correlation of abundan
 features.
 
 ```{r}
+#Implements and displays results of the features correlations modeling.
 cors = correlationTest(mouseData[55:60, ], norm = FALSE, log = FALSE)
 head(cors)
 ```
@@ -407,6 +416,7 @@ Creates a table to features localized to only some groups, while not being
 present in others.
 
 ```{r}
+#Implements unique features testing
 cl = pData(mouseData)[["diet"]]
 uniqueFeatures(mouseData, cl, nsamples = 10, nreads = 100)
 ```
@@ -417,6 +427,7 @@ There are functions which can aggregate the count matrix. The example below
 aggregates data specifically by taxonomy.
 
 ```{r}
+#Implements aggregation based on taxonomy
 obj = aggTax(mouseData, lvl = "phylum", out = "matrix")
 head(obj[1:5, 1:5])
 ```
@@ -425,6 +436,7 @@ Aggregation of samples can be done with other data found in the MRexperiment
 object.
 
 ```{r}
+#Aggregates data based on each sample.
 obj = aggSamp(mouseData, fct = "mouseID", out = "matrix")
 head(obj[1:5, 1:5])
 ```
@@ -461,6 +473,7 @@ Below demonstrates the visualization using heatmap and hierarchical clustering
 of log2 transformed counts for the 200 OTUs with the largest overall variance.
 
 ```{r}
+#Implements head mapping, sets color palette
 trials = pData(mouseData)$diet
 heatmapColColors = brewer.pal(12, "Set3")[as.integer(factor(trials))]
 heatmapCols = colorRampPalette(brewer.pal(9, "RdBu"))(50)
