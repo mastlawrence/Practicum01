@@ -26,19 +26,23 @@ biom2MRexperiment(b)
 An example of data file conversion is detailed below:
 
 ```{r}
+#loads data
 data(mouseData)
 
+#Creates biom object and writes data to file.
 b <- MRexperiment2biom(mouseData)
-write_biom(b, biom_file = "C:/Users/mastl/Desktop/Grad_School/otu_table.biom")
+write_biom(b, biom_file = "~/Desktop/otu_table.biom")
 ```
 
 ## 2.2: Loading Count Data
 
 This package requires a matrix, with features on one axis and samples on another.
-I believe that this can function as the metadata file?
 
 ```{r}
+#Loads data
 dataDirectory <- system.file("extdata", package = "metagenomeSeq")
+
+#Loads count data and displays dimensions
 lung = loadMeta(file.path(dataDirectory, "CHK_NAME.otus.count.csv"))
 dim(lung$counts)
 ```
@@ -49,6 +53,7 @@ the taxa annotations and OTUs are in the same order as the matrix rows so that
 the annotations align with the correct OTU.
 
 ```{r}
+#Reads taxonomy file into working memory.
 taxa <- read.delim(file.path(dataDirectory, "CHK_otus.taxonomy.csv"),
                    stringsAsFactors = FALSE)
 ```
@@ -59,11 +64,14 @@ Pheno data can be loaded in for additional annotation. Metadata is loaded in by
 the following method:
 
 ```{r}
+#Loads pheno data into working memeory
 clin = loadPhenoData(file.path(dataDirectory, "CHK_clinical.csv"),
                      tran = TRUE)
 
+#Matches column names in count matrix to the rownames in pheno data.
 ord = match(colnames(lung$counts), rownames(clin))
 
+#Displays matched data frame.
 clin = clin[ord, ]
 head(clin[1:2, ])
 ```
@@ -97,6 +105,7 @@ tests, and visualizations can be created. The human lung microbiome data set wil
 be imported and analyzed, along with a mouse gut biome data set.
 
 ```{r}
+#Displays example datasets
 data(lungData)
 print(lungData)
 
@@ -154,6 +163,7 @@ Data can be filtered in order to maintain a threshold of minimum depth, so
 shallower reads are excluded as noise:
 
 ```{r}
+#Filters mouse data based on read depth.
 data(mouseData)
 filterData(mouseData, present = 10, depth = 1000)
 ```
@@ -163,6 +173,7 @@ MRexperiments objects can be merged together:
 ```{r}
 data(mouseData)
 
+#Merges two instances of the mouse data dataset to demonstrate the merge function.
 newobj = mergeMRexperiments(mouseData, mouseData)
 print(newobj)
 ```
@@ -199,6 +210,8 @@ over cumulative normalization. Otherwise this will generally perform similar to
 cumNorm().
 
 ```{r}
+#Uses a feature of the dataset as the conditions
+#Then, normalizes data based on that condition.
 condition = mouseData$diet
 mouseData = wrenchNorm(mouseData, condition = condition)
 ```
@@ -240,11 +253,13 @@ bad. fitfeatureModel is the current recommended zero-inflation feature model to 
 ### 4.1.1: Example using fitFeatureModel for Differential Abundance Testing
 
 ```{r}
+#Filters out missing data, filters for read depth, then normalizes data
 data(lungData)
 lungData = lungData[, -which(is.na(pData(lungData)$SmokingStatus))]
 lungData = filterData(lungData, present = 30, depth = 1)
 lungData = cumNorm(lungData, p = 0.5)
 
+#Models filtered data
 pd <- pData(lungData)
 mod <- model.matrix( ~1 + SmokingStatus, data = pd)
 lungres1 = fitFeatureModel(lungData, mod)
