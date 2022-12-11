@@ -1,0 +1,16 @@
+---
+title: "New Format TR Review"
+output: html_notebook
+---
+
+
+# 1. Business Understanding.
+
+Overall goal is to basically create stat sheets for each tech reviewer. A 
+definition of that is provided below.
+  
+## 1.1: Determine business objectives
+
+Business Objective # 1: How many reviews performed per tech reviewer? Break out 
+how many release, stability, and validation reviews that each tech reviewer performs.
+
